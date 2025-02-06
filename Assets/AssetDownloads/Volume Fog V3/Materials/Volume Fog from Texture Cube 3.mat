@@ -1,0 +1,152 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-748928086120015886
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 639247ca83abc874e893eb93af2b5e44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 0
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Volume Fog from Texture Cube 3
+  m_Shader: {fileID: -6465566751694194690, guid: 426c2382d464faf4e8c6c0107c5cb6a1, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _ALPHATEST_ON
+  - _SURFACE_TYPE_TRANSPARENT
+  m_InvalidKeywords:
+  - _BOOLEAN
+  - _SHADOW_ENABLED
+  - _SHADOW_ENABLED_EDITOR_ONLY
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3000
+  stringTagMap:
+    RenderType: Transparent
+  disabledShaderPasses:
+  - DepthOnly
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - Texture2D_247129A1:
+        m_Texture: {fileID: 2800000, guid: c6df472464156ec4ba970094a2621292, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Noise:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Noise2D:
+        m_Texture: {fileID: 2800000, guid: c6df472464156ec4ba970094a2621292, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Noise3D:
+        m_Texture: {fileID: 11700000, guid: f1b46a56d0c951b468f379dfc5547eec, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - Vector1_3B432204: 0
+    - Vector1_4EEA1A9E: 16
+    - Vector1_522DD793: 0
+    - Vector1_5E73A52C: 71.93
+    - Vector1_6098A7A7: 0.17
+    - Vector1_6DD21BAC: 13.18
+    - Vector1_6F1EA0F8: 20
+    - Vector1_705D9E76: 3.87
+    - Vector1_82DE1604: 0.262
+    - Vector1_87A9718A: 1.02
+    - Vector1_94DE536A: 0
+    - Vector1_A8E3BAE4: 2.83
+    - Vector1_AF6ECEBD: -44.25
+    - Vector1_B0641435: 25.5
+    - Vector1_C8E4C00D: 0
+    - Vector1_FADB2BB0: 0
+    - Vector1_FDB42E7D: 0.2
+    - _AlphaClip: 1
+    - _AlphaToMask: 0
+    - _BOOLEAN: 1
+    - _BUILTIN_QueueControl: -1
+    - _BUILTIN_QueueOffset: 0
+    - _Blend: 0
+    - _Boolean: 0
+    - _BoundsFade: 2.37
+    - _BoundsFadeRange: 8.92
+    - _CastShadows: 1
+    - _Cull: 1
+    - _DstBlend: 10
+    - _LoopStop: 3.95
+    - _Multiplier: 4.56
+    - _Noise2DPower: 1.44
+    - _Noise2DScale: 0.576
+    - _QueueControl: 1
+    - _QueueOffset: 0
+    - _Randomness: 0.2
+    - _SHADOW_ENABLED: 1
+    - _SHADOW_ENABLED_EDITOR_ONLY: 1
+    - _Samples: 60
+    - _ShadowAdd: 1.79
+    - _ShadowMulti: 1
+    - _Shadow_Add: -0.3
+    - _Shadow_Multi: 3.52
+    - _Size: 13.9
+    - _SrcBlend: 5
+    - _Surface: 1
+    - _Threshold: 0.4
+    - _YtoSizeRation: 2.8
+    - _ZTest: 8
+    - _ZWrite: 0
+    - _ZWriteControl: 0
+    - _clipping: 0
+    - _shadowEdge: 0.41
+    - _shadow_multi: 17.62
+    - _test: 0
+    - t1: 0.48
+    - t2: 0.5
+    m_Colors:
+    - Color_69AD1AD: {r: 1, g: 1, b: 1, a: 0.79607844}
+    - Vector3_478B0511: {r: -8.43, g: 0.53, b: 2, a: 0}
+    - Vector4_52CE31FB: {r: 0, g: 0, b: 0, a: 0}
+    - _Offset: {r: 0, g: 0, b: 0, a: 0}
+    - _Shadow_Tint: {r: 0.25431475, g: 0.2578616, b: 0.10298244, a: 0}
+  m_BuildTextureStacks: []
+--- !u!114 &8148561074471052155
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 7
