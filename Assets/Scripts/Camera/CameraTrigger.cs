@@ -14,7 +14,7 @@ public class CameraTrigger : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            Debug.Log($"Player masuk ke trigger dengan kamera indeks {cameraIndex}");
+            // Debug.Log($"Player masuk ke trigger dengan kamera indeks {cameraIndex}");
             cameraManager.SwitchCamera(cameraIndex);
         }
     }
