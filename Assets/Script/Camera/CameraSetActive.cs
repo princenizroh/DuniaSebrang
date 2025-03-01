@@ -1,11 +1,11 @@
+using System;
 using UnityEngine;
-using Unity.Cinemachine;
 
-public class CameraManager : MonoBehaviour
+public class CameraSetActive : MonoBehaviour
 {
-    public CinemachineCamera[] cameras;
-    public CinemachineCamera startCamera;
-    private CinemachineCamera currentCam;
+    public GameObject[] cameras;
+    public GameObject startCamera;
+    private GameObject currentCam;
 
     private void Start()
     {
@@ -14,7 +14,7 @@ public class CameraManager : MonoBehaviour
 
         for (int i = 0; i < cameras.Length; i++)
         {
-            cameras[i].enabled = (cameras[i] == currentCam);
+            cameras[i].SetActive(cameras[i] == currentCam);
         }
     }
 
@@ -27,10 +27,10 @@ public class CameraManager : MonoBehaviour
         }
 
         // Matikan kamera saat ini
-        currentCam.enabled = false;
+        currentCam.SetActive(false);
 
         // Aktifkan kamera baru
         currentCam = cameras[cameraIndex];
-        currentCam.enabled = true;
+        currentCam.SetActive(true);
     }
 }

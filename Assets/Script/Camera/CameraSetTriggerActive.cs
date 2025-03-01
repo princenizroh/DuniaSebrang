@@ -1,14 +1,14 @@
 using UnityEngine;
 
-public class CameraTrigger : MonoBehaviour
+public class CameraSetTriggerActive : MonoBehaviour
 {
     public int cameraIndex; // Indeks kamera yang akan diaktifkan
-    private CameraManager cameraManager;
+    private CameraSetActive cameraManager;
 
     [System.Obsolete]
     private void Start()
     {
-        cameraManager = FindObjectOfType<CameraManager>();
+        cameraManager = FindObjectOfType<CameraSetActive>();
     }
 
     private void OnTriggerEnter(Collider other)
