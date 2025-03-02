@@ -5,6 +5,7 @@ public class CameraTrigger : MonoBehaviour
     public int cameraIndex; // Indeks kamera yang akan diaktifkan
     private CameraManager cameraManager;
 
+    [System.Obsolete]
     private void Start()
     {
         cameraManager = FindObjectOfType<CameraManager>();

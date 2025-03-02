@@ -20,7 +20,6 @@ public class CameraManager : MonoBehaviour
 
     public void SwitchCamera(int cameraIndex)
     {
-        // Validasi indeks kamera
         if (cameraIndex < 0 || cameraIndex >= cameras.Length)
         {
             Debug.LogError($"Kamera dengan indeks {cameraIndex} tidak valid!");
