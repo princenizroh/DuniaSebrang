@@ -1,0 +1,119 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Flipbook_Effects_RED03
+  m_Shader: {fileID: 4800000, guid: 30bc8fd703be46640bd61c9fef44f54f, type: 3}
+  m_ShaderKeywords: _EFFECTSBACKFRONT_EFFECT_BACK _KEYWORD0_CYLINDER _MASK_SELECTS_CYLINDER
+    _MASK_SELECTS_SPHERE _MASK__LIGHTNINGMASK _TEXTURERGBSWITCH_R
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _Fllipbook:
+        m_Texture: {fileID: 2800000, guid: e67e1ad3d9f2c144e9ba4a1bd1d88aa5, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: b494defe66ebbea47ac6278e2ebd124f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Noise:
+        m_Texture: {fileID: 2800000, guid: f439bf46c90ab6b49bd5efa93c4f8585, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TextureRGB:
+        m_Texture: {fileID: 2800000, guid: 941b466bc43a43541a115fd484f9b4dc, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - _AlphaCutoff: 0.5
+    - _Alpha_Opacity: 1
+    - _EffectsBackFront: 0
+    - _FireWaterMask_FianalEmissive: 1
+    - _FireWaterMask_Shape_Edge01: 0.1
+    - _FireWaterMask_Shape_Edge02: 0.2
+    - _FireWaterMask_Shape_Multiply: 4
+    - _FireWaterMask_Shape_Power: 1
+    - _FireWaterMask_Speed: 0
+    - _FllipbookRotate0360: 0
+    - _Fllipbook_Columns: 1
+    - _Fllipbook_Emissive: 10
+    - _Fllipbook_Noise: 0.2
+    - _Fllipbook_Opacity: 1
+    - _Fllipbook_Rows: 1
+    - _Fllipbook_speed: 3
+    - _Gradetion_Noise_Opacity: 0
+    - _Gradetion_Noise_Speed: 0
+    - _InvFade: 1
+    - _Keyword0: 0
+    - _LightningMask_Power: 2.1
+    - _LightningMask_Scale: 7.8
+    - _LightningMask_Speed: 5
+    - _MASK_: 1
+    - _MASK_SELECTS: 1
+    - _MaskCenter: 0
+    - _MaskSize: 0.2
+    - _MaskSphereCenter: 0
+    - _MaskSphereSize: 0.2
+    - _Mask_Gradetion_Pawer: 5
+    - _Mask_Gradetion_PawerA: 5
+    - _Mask_Gradetion_PawerB: 0.5
+    - _Mask_Opacity: 1
+    - _Mask_Selects: 0
+    - _Mask_SphereCenter: 0
+    - _Mask_SphereSize: 0.2
+    - _NoiseRotate_Speed: 0.5
+    - _Noise_Opacity: 1
+    - _Noise_Speed: 5
+    - _Opacity: 1
+    - _Opacity_Alpha: 1
+    - _Opacity_RGB: 1
+    - _RGB_Opacity: 1
+    - _Rectangle_Heigth: 0.9
+    - _Rectangle_Radius: 0.1
+    - _Rectangle_Width: 0.9
+    - _Speed: 5
+    - _Sphere_NoiseRotate_Speed: 0.5
+    - _Sphere_Noise_Opacity: 0.01
+    - _Sphere_Twister_Opacity: 0.02
+    - _Sphere_Twister_Size: 10
+    - _Sphere_Twister_Speed: 0.3
+    - _TextureRGBSwitch: 0
+    - _Texture_Columns: 1
+    - _Texture_Emissive: 1
+    - _Texture_Noise: 0.04067161
+    - _Texture_Noise_Sellect: 0.5
+    - _Texture_Number_Sellect: 0
+    - _Texture_Opacity: 1
+    - _Texture_Rows: 1
+    - _Twister_Opacity: 0.2
+    - _Twister_Size: 10
+    - _Twister_Speed: 0.3
+    - _Voronoi_Tiling: 6.0494313
+    - __CullMode__: 0
+    - __DstBlendMode__: 1
+    - __SrcBlendMode__: 1
+    - __ZDepth__: 4
+    - __ZWrite__: 0
+    m_Colors:
+    - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Fllipbook_Color: {r: 8, g: 8, b: 8, a: 1}
+    - _Gradetion_NoisexyTilingyzOffset: {r: 1, g: 1, b: 0, a: 0}
+    - _Mask_Color01: {r: 1, g: 0.26311338, b: 0, a: 1}
+    - _Mask_Color02: {r: 1, g: 0.7052167, b: 0, a: 1}
+    - _Mask_FianalColor: {r: 1, g: 1, b: 1, a: 1}
+    - _NoisexyTilingyzOffset: {r: 1, g: 1, b: 0, a: 0}
+    - _Texture_Color: {r: 1, g: 1, b: 1, a: 1}
+    - _TintColor: {r: 0.99607843, g: 0.74296653, b: 0.34117642, a: 1}
+  m_BuildTextureStacks: []

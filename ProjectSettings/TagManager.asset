@@ -6,16 +6,17 @@ TagManager:
   tags:
   - Enemy
   - Light
+  - activeConstructable
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Environment
   - Water
   - UI
   - Player
   - Enemy
-  - 
+  - GroundCheck
   - 
   - 
   - 
