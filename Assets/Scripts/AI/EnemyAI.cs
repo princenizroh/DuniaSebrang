@@ -37,7 +37,7 @@ namespace DS
         [field: SerializeField] private Vector3 destination;
         [field: SerializeField] private int index_patrolPoint;
         [field: SerializeField] private bool isHit;
-        [field: SerializeField] private float curentTimeChasing, curentTimeWaiting;
+        [field: SerializeField] private float currentTimeChasing, currentTimeWaiting;
 
         private void Awake()
         {
@@ -79,18 +79,14 @@ namespace DS
         private void Patroling()
         {
             Agent.speed = patrolSpeed;
-            if (patrolPoint.Length == 0)
-            {
-                Debug.LogWarning("Patrol point belum diatur!");
-                return;
-            }
 
-            Agent.destination = destination = patrolPoint[index_patrolPoint].position;
+            // Agent.destination = destination = patrolPoint[index_patrolPoint].position;
 
             if (Agent.remainingDistance < Agent.stoppingDistance)
             {
-                index_patrolPoint = (index_patrolPoint + 1) % patrolPoint.Length;
-                Debug.Log("Change Patrol to " + Agent.destination);
+                // index_patrolPoint = (index_patrolPoint + 1) % patrolPoint.Length;
+                // Debug.Log("Change Patrol to " + Agent.destination);
+                SwitchMoveMode(MoveMode.wait);
             }
         }
 
@@ -105,27 +101,59 @@ namespace DS
                 isHit = true;
             }
 
-            if(curentTimeChasing > maxTimeChasing) {
+            if(currentTimeChasing > maxTimeChasing) {
                 isChasing = false;
                 moveMode = MoveMode.patrol;
-                curentTimeChasing = 0;
+                currentTimeChasing = 0;
             } else {
-                curentTimeChasing += Time.deltaTime;
+                currentTimeChasing += Time.deltaTime;
             }
         }
 
         private void Waiting()
         {
-            Agent.destination = transform.position;
+            // Agent.destination = transform.position;
 
-            if(curentTimeWaiting > maxTimeChasing) {
-                isChasing = true;
-                Debug.Log("Enemy Menunggu terlalu lama, kembali mengejar");
-                moveMode = MoveMode.chase;
-                curentTimeWaiting = 0;
+            if(currentTimeWaiting > maxTimeChasing) {
+                // isChasing = true;
+                // Debug.Log("Enemy Menunggu terlalu lama, kembali mengejar");
+                // moveMode = MoveMode.chase;
+                // currentTimeWaiting = 0;
+                SwitchMoveMode(MoveMode.patrol);
             } else {
-                curentTimeWaiting += Time.deltaTime;
+                currentTimeWaiting += Time.deltaTime;
             }
+        }
+
+        private void SwitchMoveMode (MoveMode _moveMode)
+        {
+            switch (_moveMode)
+            {
+                case MoveMode.patrol:
+                    int lastIndex = index_patrolPoint;
+                    int newIndex = (index_patrolPoint + 1) % patrolPoint.Length;
+
+                    if (lastIndex == newIndex)
+                    {
+                        newIndex = (index_patrolPoint + 2) % patrolPoint.Length;
+                        Debug.Log("Change Patrol to " + patrolPoint[newIndex].position);
+                        return;
+                    }
+
+                    index_patrolPoint = newIndex;
+                    Agent.destination = destination = patrolPoint[index_patrolPoint].position;
+                    Debug.Log("Change Patrol to " + index_patrolPoint.ToString());
+                    break;
+                case MoveMode.chase:
+                    currentTimeChasing = 0;
+                    break;
+                case MoveMode.wait:
+                    Agent.destination = transform.position;
+                    currentTimeWaiting = 0;
+                    break;
+            }
+            moveMode = _moveMode;
+            Debug.Log("Switch Move Mode to " + moveMode.ToString());
         }
 
 
