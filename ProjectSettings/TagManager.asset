@@ -17,8 +17,8 @@ TagManager:
   - Player
   - Enemy
   - GroundCheck
-  - 
-  - 
+  - Obstacle
+  - Patrol Point
   - 
   - 
   - 
