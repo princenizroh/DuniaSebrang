@@ -69,6 +69,14 @@ namespace DS
             }
 
             FieldOfView();
+            Animations();
+        }
+
+        private void Animations()
+        {
+           if (Animator == null) return;
+
+            Animator.SetBool("isRunning", moveMode == MoveMode.chase);
         }
 
         private void Patroling()
