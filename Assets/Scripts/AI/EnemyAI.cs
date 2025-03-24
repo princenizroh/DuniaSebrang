@@ -13,8 +13,8 @@ namespace DS
     public class EnemyAI : MonoBehaviour
     {
         [field: SerializeField] public MoveMode moveMode { get; private set; }
-        private Animator Animator;
-        private Rigidbody Rigidbody;
+        private Animator animator;
+        private Rigidbody rb;
 
         [Header("Steering")]
         [field: SerializeField] public float patrolSpeed { get; private set; }
@@ -25,7 +25,7 @@ namespace DS
 
         [Header("Transform")]
         [field: SerializeField] public Transform[] patrolPoint { get; private set; }
-        [field: SerializeField] public NavMeshAgent Agent { get; private set; }
+        [field: SerializeField] public NavMeshAgent agent { get; private set; }
         [field: SerializeField] public Transform currentTarget { get; private set; }
         private bool isChasing = false;
 
@@ -43,14 +43,14 @@ namespace DS
 
         private void Awake()
         {
-            Animator = GetComponentInChildren<Animator>();
+            animator = GetComponentInChildren<Animator>();
         }
         private void Start()
         {
-            if (Agent == null)
-                Agent = GetComponent<NavMeshAgent>();
-            if (Agent.stoppingDistance < 0.5f)
-                Agent.stoppingDistance = 0.5f;
+            if (agent == null)
+                agent = GetComponent<NavMeshAgent>();
+            if (agent.stoppingDistance < 0.5f)
+                agent.stoppingDistance = 0.5f;
         }
 
         private void Update()
@@ -74,16 +74,16 @@ namespace DS
 
         private void Animations()
         {
-           if (Animator == null) return;
+           if (animator == null) return;
 
-            Animator.SetBool("isRunning", moveMode == MoveMode.chase);
+            animator.SetBool("isRunning", moveMode == MoveMode.chase);
         }
 
         private void Patroling()
         {
-            Agent.speed = patrolSpeed;
+            agent.speed = patrolSpeed;
 
-            if (Agent.remainingDistance < Agent.stoppingDistance)
+            if (agent.remainingDistance < agent.stoppingDistance)
             {
                 SwitchMoveMode(MoveMode.wait);
             }
@@ -91,8 +91,8 @@ namespace DS
 
         private void Chasing()
         {
-            Agent.speed = chaseSpeed;
-            Agent.destination = currentTarget.position;
+            agent.speed = chaseSpeed;
+            agent.destination = currentTarget.position;
             Collider[] col = Physics.OverlapSphere(transform.position, radiusHit, TargetMask, QueryTriggerInteraction.Ignore);
 
             if(col.Length > 0 && !isHit) {
@@ -135,14 +135,14 @@ namespace DS
                     }
 
                     index_patrolPoint = newIndex;
-                    Agent.destination = destination = patrolPoint[index_patrolPoint].position;
+                    agent.destination = destination = patrolPoint[index_patrolPoint].position;
                     Debug.Log("Change Patrol to " + index_patrolPoint.ToString());
                     break;
                 case MoveMode.chase:
                     currentTimeChasing = 0;
                     break;
                 case MoveMode.wait:
-                    Agent.destination = transform.position;
+                    agent.destination = transform.position;
                     currentTimeWaiting = 0;
                     break;
             }
@@ -204,9 +204,9 @@ namespace DS
 
       private void OnDrawGizmos()
       {
-          if(Agent == null) return;
+          if(agent == null) return;
 
-          Gizmos.DrawWireSphere(transform.position, Agent.stoppingDistance);
+          Gizmos.DrawWireSphere(transform.position, agent.stoppingDistance);
 
           Gizmos.DrawWireSphere(transform.position, viewRadius);
 
