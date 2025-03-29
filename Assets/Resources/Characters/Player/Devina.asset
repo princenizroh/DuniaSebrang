@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Devina
   m_EditorClassIdentifier: 
   <GroundedData>k__BackingField:
-    <BaseSpeed>k__BackingField: 25
+    <BaseSpeed>k__BackingField: 2.5
     <GroundToFallRayDistance>k__BackingField: 1
     <SlopeSpeedAngles>k__BackingField:
       serializedVersion: 2
@@ -89,10 +89,10 @@ MonoBehaviour:
         <WaitTime>k__BackingField: 0.25
         <RecenteringTime>k__BackingField: 0.5
     <DashData>k__BackingField:
-      <SpeedModifier>k__BackingField: 2
+      <SpeedModifier>k__BackingField: 1
       <RotationData>k__BackingField:
         <TargetRotationReachTime>k__BackingField: {x: 0, y: 0.02, z: 0}
-      <TimeToBeConsideredConsecutive>k__BackingField: 1
+      <TimeToBeConsideredConsecutive>k__BackingField: 0
       <ConsecutiveDashesLimitAmount>k__BackingField: 2
       <DashLimitReachedCooldown>k__BackingField: 1.75
     <WalkData>k__BackingField:
