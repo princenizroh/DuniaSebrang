@@ -64,7 +64,11 @@
             {
                 "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
                 "key": "editor.backFaceSelectEnabled",
+<<<<<<< HEAD
                 "value": "{\"m_Value\":false}"
+=======
+                "value": "{\"m_Value\":true}"
+>>>>>>> 498a5ce3a6e5c4a002696d180d695b8ae38db8f5
             },
             {
                 "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
@@ -84,11 +88,26 @@
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Cube",
+<<<<<<< HEAD
                 "value": "{\"m_Value\":{\"x\":31.466949462890626,\"y\":4.5,\"z\":-0.3019752502441406}}"
+=======
+                "value": "{\"m_Value\":{\"x\":4.4013776779174809,\"y\":2.7333221435546877,\"z\":-1.914133071899414}}"
+            },
+            {
+                "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+                "key": "ShapeBuilder.LastSize.Door",
+                "value": "{\"m_Value\":{\"x\":3.032960891723633,\"y\":10.436517715454102,\"z\":-7.191003799438477}}"
+            },
+            {
+                "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+                "key": "ShapeBuilder.LastSize.Torus",
+                "value": "{\"m_Value\":{\"x\":1.0,\"y\":1.0,\"z\":1.0}}"
+>>>>>>> 498a5ce3a6e5c4a002696d180d695b8ae38db8f5
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Plane",
+<<<<<<< HEAD
                 "value": "{\"m_Value\":{\"x\":-4.445343017578125,\"y\":0.0,\"z\":-11.964893341064454}}"
             },
             {
@@ -105,6 +124,9 @@
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Cone",
                 "value": "{\"m_Value\":{\"x\":1.0,\"y\":1.0,\"z\":1.0}}"
+=======
+                "value": "{\"m_Value\":{\"x\":-13.755611419677735,\"y\":0.0,\"z\":-6.135896682739258}}"
+>>>>>>> 498a5ce3a6e5c4a002696d180d695b8ae38db8f5
             },
             {
                 "type": "UnityEngine.Quaternion, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
@@ -113,6 +135,7 @@
             },
             {
                 "type": "UnityEngine.Quaternion, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+<<<<<<< HEAD
                 "key": "ShapeBuilder.LastRotation.Plane",
                 "value": "{\"m_Value\":{\"x\":0.0,\"y\":0.0,\"z\":0.0,\"w\":1.0}}"
             },
@@ -132,6 +155,22 @@
                 "value": "{\"m_Value\":{\"x\":0.0,\"y\":0.0,\"z\":0.0,\"w\":1.0}}"
             },
             {
+=======
+                "key": "ShapeBuilder.LastRotation.Door",
+                "value": "{\"m_Value\":{\"x\":0.0,\"y\":0.9999999403953552,\"z\":0.0,\"w\":0.0}}"
+            },
+            {
+                "type": "UnityEngine.Quaternion, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+                "key": "ShapeBuilder.LastRotation.Torus",
+                "value": "{\"m_Value\":{\"x\":0.0,\"y\":0.0,\"z\":0.0,\"w\":1.0}}"
+            },
+            {
+                "type": "UnityEngine.Quaternion, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+                "key": "ShapeBuilder.LastRotation.Plane",
+                "value": "{\"m_Value\":{\"x\":0.0,\"y\":0.0,\"z\":0.0,\"w\":1.0}}"
+            },
+            {
+>>>>>>> 498a5ce3a6e5c4a002696d180d695b8ae38db8f5
                 "type": "UnityEngine.Material, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "mesh.userMaterial",
                 "value": "{\"m_Value\":{\"instanceID\":0}}"
@@ -143,22 +182,34 @@
             },
             {
                 "type": "UnityEngine.ProBuilder.PivotLocation, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+<<<<<<< HEAD
                 "key": "ShapeBuilder.PivotLocation.Plane",
                 "value": "{\"m_Value\":0}"
             },
             {
                 "type": "UnityEngine.ProBuilder.PivotLocation, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.PivotLocation.Cylinder",
+=======
+                "key": "ShapeBuilder.PivotLocation.Door",
+>>>>>>> 498a5ce3a6e5c4a002696d180d695b8ae38db8f5
                 "value": "{\"m_Value\":0}"
             },
             {
                 "type": "UnityEngine.ProBuilder.PivotLocation, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+<<<<<<< HEAD
                 "key": "ShapeBuilder.PivotLocation.Stairs",
+=======
+                "key": "ShapeBuilder.PivotLocation.Torus",
+>>>>>>> 498a5ce3a6e5c4a002696d180d695b8ae38db8f5
                 "value": "{\"m_Value\":0}"
             },
             {
                 "type": "UnityEngine.ProBuilder.PivotLocation, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+<<<<<<< HEAD
                 "key": "ShapeBuilder.PivotLocation.Cone",
+=======
+                "key": "ShapeBuilder.PivotLocation.Plane",
+>>>>>>> 498a5ce3a6e5c4a002696d180d695b8ae38db8f5
                 "value": "{\"m_Value\":0}"
             },
             {
@@ -187,6 +238,7 @@
                 "value": "{}"
             },
             {
+<<<<<<< HEAD
                 "type": "UnityEngine.ProBuilder.Shapes.Shape, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.Plane",
                 "value": "{}"
@@ -210,6 +262,11 @@
                 "type": "UnityEngine.ProBuilder.RectSelectMode, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "editor.dragSelectRectMode",
                 "value": "{\"m_Value\":0}"
+=======
+                "type": "UnityEngine.ProBuilder.SelectMode, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+                "key": "s_SelectMode",
+                "value": "{\"m_Value\":4}"
+>>>>>>> 498a5ce3a6e5c4a002696d180d695b8ae38db8f5
             }
         ]
     }
