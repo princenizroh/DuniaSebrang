@@ -6,8 +6,9 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
 {
-
     public CharacterController controller;
+    public CapsuleCollider capsule;
+
     public float speed = 5f;
     public float turnSmoothTime = 0.1f;
     private float turnSmoothVelocity;
@@ -22,10 +23,13 @@ public class PlayerMovement : MonoBehaviour
         {
             controller = GetComponent<CharacterController>();
         }
+        capsule = GetComponent<CapsuleCollider>();
     }
 
     void Update()
     {
+        Shader.SetGlobalVector("_Player", transform.position + Vector3.up * capsule.radius);
+        
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
         Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
