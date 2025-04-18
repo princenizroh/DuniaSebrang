@@ -1435,7 +1435,7 @@
         "curve"
     ],
     "m_Precision": 0,
-    "m_PreviewExpanded": false,
+    "m_PreviewExpanded": true,
     "m_DismissedVersion": 0,
     "m_PreviewMode": 0,
     "m_CustomColors": {
@@ -2152,7 +2152,7 @@
         "opposite"
     ],
     "m_Precision": 0,
-    "m_PreviewExpanded": false,
+    "m_PreviewExpanded": true,
     "m_DismissedVersion": 0,
     "m_PreviewMode": 0,
     "m_CustomColors": {
@@ -3270,8 +3270,8 @@
     "m_ObjectId": "d41ec30843c04f45ad9a40d2c40ca662",
     "m_Title": "Fire",
     "m_Position": {
-        "x": -2678.400146484375,
-        "y": -74.39999389648438
+        "x": -2678.39990234375,
+        "y": -74.4000244140625
     }
 }
 
