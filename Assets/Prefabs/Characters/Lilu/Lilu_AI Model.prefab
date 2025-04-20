@@ -127,8 +127,6 @@ GameObject:
   - component: {fileID: 18089921830705834}
   - component: {fileID: 1265229531884769857}
   - component: {fileID: 4986887625817200473}
-  - component: {fileID: 6428041485557984657}
-  - component: {fileID: 7359045381487156618}
   - component: {fileID: 2855847913490327307}
   - component: {fileID: 199822028203597260}
   - component: {fileID: 5106658900261376281}
@@ -209,55 +207,6 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 112
   m_CollisionDetection: 1
---- !u!114 &6428041485557984657
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8360986664162157642}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f9af045182270e24c9d4fe5e0b45c533, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  <Data>k__BackingField: {fileID: 11400000, guid: 21ddbe85bd24ac648b6e2518769aecfa, type: 2}
-  <LayerData>k__BackingField:
-    <GroundLayer>k__BackingField:
-      serializedVersion: 2
-      m_Bits: 8
-  <CameraRecenteringUtility>k__BackingField:
-    <VirtualCamera>k__BackingField: {fileID: 0}
-    <DefaultHorizontalWaitTime>k__BackingField: 0
-    <DefaultHorizontalRecenteringTime>k__BackingField: 4
-  <AnimationData>k__BackingField:
-    groundedParameterName: Grounded
-    movingParameterName: Moving
-    stoppingParameterName: Stopping
-    landingParameterName: Landing
-    airborneParameterName: Airborne
-    idleParameterName: isIdling
-    dashParameterName: isDashing
-    walkParameterName: isWalking
-    runParameterName: isRunning
-    sprintParameterName: isSprinting
-    mediumStopParameterName: isMediumStopping
-    hardStopParameterName: isHardStopping
-    rollParameterName: isRolling
-    hardLandParameterName: isHardLanding
-    fallParameterName: isFalling
---- !u!114 &7359045381487156618
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8360986664162157642}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aaa4fc31561d9a54ba8798c6b5057c2a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &2855847913490327307
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -313,6 +262,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 719330f7d48cfc643bbe645e95f06275, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  <moveMode>k__BackingField: 0
+  <patrolSpeed>k__BackingField: 0
+  <chaseSpeed>k__BackingField: 0
+  <maxTimeChasing>k__BackingField: 0
+  <maxTimeWaiting>k__BackingField: 0
+  <radiusHit>k__BackingField: 0
+  <patrolPoint>k__BackingField: []
+  <agent>k__BackingField: {fileID: 0}
+  <currentTarget>k__BackingField: {fileID: 0}
+  <viewRadius>k__BackingField: 0
+  <viewAngle>k__BackingField: 0
+  <TargetMask>k__BackingField:
+    serializedVersion: 2
+    m_Bits: 0
+  <ObstacleMask>k__BackingField:
+    serializedVersion: 2
+    m_Bits: 0
+  <isDetectTarget>k__BackingField: 0
+  destination: {x: 0, y: 0, z: 0}
+  index_patrolPoint: 0
+  isHit: 0
+  currentTimeChasing: 0
+  currentTimeWaiting: 0
 --- !u!195 &435292386574611694
 NavMeshAgent:
   m_ObjectHideFlags: 0
