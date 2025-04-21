@@ -27,6 +27,7 @@ namespace DS
 
         [Header("UI")]
         [SerializeField] private GameObject followText;
+        [SerializeField] private GameObject followText2;
         private void Awake()
         {
             animator = GetComponentInChildren<Animator>();
@@ -98,6 +99,7 @@ namespace DS
                     Debug.Log("Reached final patrol point. Deactivating GuideAI.");
                     followText?.SetActive(false); // Nonaktifkan teks
                     gameObject.SetActive(false); // Nonaktifkan GameObject
+                    followText2?.SetActive(true); // Aktifkan teks "Ikuti jejak kaki ini"
                 }
             }
         }
