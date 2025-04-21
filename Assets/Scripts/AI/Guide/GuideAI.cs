@@ -19,15 +19,45 @@ namespace DS
         [Header("Transform")]
         [field: SerializeField] public Transform[] patrolPoint { get; private set; }
         [field: SerializeField] public NavMeshAgent agent { get; private set; }
-
-        [field: SerializeField] private float currentTimeWaiting;
         [field: SerializeField] private Vector3 destination;
         [field: SerializeField] private int index_patrolPoint;
 
+        [Header("Player Opening Guide")]
+        [field: SerializeField] public PlayerOpeningGuide playerOpeningGuide { get; private set; }
+
+        [Header("UI")]
+        [SerializeField] private GameObject followText;
         private void Awake()
         {
             animator = GetComponentInChildren<Animator>();
+
+            if (playerOpeningGuide == null)
+            {
+                playerOpeningGuide = FindFirstObjectByType<PlayerOpeningGuide>();
+            }
+
+            if (playerOpeningGuide != null)
+            {
+                playerOpeningGuide.OnPlayerDetected += HandlePlayerDetected;
+            }
+            else
+            {
+                Debug.LogError("PlayerOpeningGuide not found! Make sure it is assigned in the Inspector or exists in the scene.");
+            }
         }
+
+        private void OnDestroy()
+        {
+            if (playerOpeningGuide != null)
+            {
+                playerOpeningGuide.OnPlayerDetected -= HandlePlayerDetected;
+            }
+        }
+        private void HandlePlayerDetected()
+        {
+            Debug.Log("Player detected");
+            SwitchGuideMode(GuideState.patrol);
+        }   
 
         private void Start()
         {
@@ -54,16 +84,21 @@ namespace DS
 
         private void Idle()
         {
-            animator.SetBool("isPatrol", false);
-            agent.isStopped = true;
+            
         }
         private void Patroling()
         {
             agent.speed = patrolSpeed;
 
-            if (agent.remainingDistance <= agent.stoppingDistance)
+            if (agent.remainingDistance < agent.stoppingDistance)
             {
-                SwitchGuideMode(GuideState.idle);
+                if (index_patrolPoint == patrolPoint.Length - 1)
+                {
+                    // Jika sudah di patrol point terakhir
+                    Debug.Log("Reached final patrol point. Deactivating GuideAI.");
+                    followText?.SetActive(false); // Nonaktifkan teks
+                    gameObject.SetActive(false); // Nonaktifkan GameObject
+                }
             }
         }
 
@@ -71,10 +106,6 @@ namespace DS
         {
             switch (_guideState)
             {
-                case GuideState.idle:
-                    agent.destination = transform.position;
-                    currentTimeWaiting = 0;
-                    break;
                 case GuideState.patrol:
                     int lastIndex = index_patrolPoint;
                     int newIndex = (index_patrolPoint + 1) % patrolPoint.Length;
@@ -90,7 +121,11 @@ namespace DS
                     agent.destination = destination = patrolPoint[index_patrolPoint].position;
                     Debug.Log("Change Patrol to " + index_patrolPoint.ToString());
                     break;
+                case GuideState.idle:
+                    agent.destination = transform.position;
+                    break;
             }
+            guideState = _guideState;
         }
     }   
 }

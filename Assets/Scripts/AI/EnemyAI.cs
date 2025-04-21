@@ -44,6 +44,7 @@ namespace DS
         private void Awake()
         {
             animator = GetComponentInChildren<Animator>();
+            rb = GetComponent<Rigidbody>();
         }
         private void Start()
         {

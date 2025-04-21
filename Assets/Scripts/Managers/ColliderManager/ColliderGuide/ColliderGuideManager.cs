@@ -8,6 +8,11 @@ namespace DS
 
         private void Awake()
         {
+            colliders = new GameObject[transform.childCount];
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                colliders[i] = transform.GetChild(i).gameObject;
+            }
         }
 
         private void Update()
