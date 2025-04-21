@@ -19,40 +19,45 @@ namespace DS
                 TwoBoneIKConstraint = GetComponent<TwoBoneIKConstraint>();
             }
         }
+        public void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.F))
+            {
+                ToggleFlashlight();
+            }
 
-private void Update()
-{
-    if (Input.GetKeyDown(KeyCode.F))
-    {
-        ToggleFlashlight();
-    }
+            UpdateWeight();
+            UpdateFlashlightTransform();
+        }
 
-    // Smoothly transition the weight
-    if (TwoBoneIKConstraint != null)
-    {
-        float targetWeight = isFlashlightOn ? 1f : 0f;
-        TwoBoneIKConstraint.weight = Mathf.MoveTowards(TwoBoneIKConstraint.weight, targetWeight, transitionSpeed * Time.deltaTime);
-    }
+        private void UpdateWeight()
+        {
+            if (TwoBoneIKConstraint != null)
+            {
+                float targetWeight = isFlashlightOn ? 1f : 0f;
+                TwoBoneIKConstraint.weight = Mathf.MoveTowards(TwoBoneIKConstraint.weight, targetWeight, transitionSpeed * Time.deltaTime);
+            }
+        }
 
-    // Smoothly move flashlight to the target position and rotation
-    if (flashlightTransform != null)
-    {
-        Transform targetPosition = isFlashlightOn ? targetPositionOn : targetPositionOff;
+        private void UpdateFlashlightTransform()
+        {
+            if (flashlightTransform != null)
+            {
+                Transform targetPosition = isFlashlightOn ? targetPositionOn : targetPositionOff;
 
-        // Adjust speed based on weight using SmoothStep
-        float smoothedWeight = Mathf.SmoothStep(0f, 1f, TwoBoneIKConstraint.weight);
-        float adjustedSpeed = transitionSpeed * smoothedWeight;
+                float smoothedWeight = Mathf.SmoothStep(0f, 1f, TwoBoneIKConstraint.weight);
+                float adjustedSpeed = transitionSpeed * smoothedWeight;
 
-        // Move position
-        flashlightTransform.position = Vector3.MoveTowards(flashlightTransform.position, targetPosition.position, adjustedSpeed * Time.deltaTime);
+                // Move position
+                flashlightTransform.position = Vector3.MoveTowards(flashlightTransform.position, targetPosition.position, adjustedSpeed * Time.deltaTime);
 
-        // Move rotation
-        Quaternion targetRotation = isFlashlightOn ? targetPositionOn.rotation : targetPositionOff.rotation;
-        flashlightTransform.rotation = Quaternion.RotateTowards(flashlightTransform.rotation, targetRotation, adjustedSpeed * 100f * Time.deltaTime);
-    }
-}
+                // Move rotation
+                Quaternion targetRotation = isFlashlightOn ? targetPositionOn.rotation : targetPositionOff.rotation;
+                flashlightTransform.rotation = Quaternion.RotateTowards(flashlightTransform.rotation, targetRotation, adjustedSpeed * 100f * Time.deltaTime);
+            }
+        }
 
-        private void ToggleFlashlight()
+        public void ToggleFlashlight()
         {
             isFlashlightOn = !isFlashlightOn;
 

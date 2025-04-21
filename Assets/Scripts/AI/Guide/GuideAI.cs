@@ -24,7 +24,7 @@ namespace DS
 
         [Header("Player Opening Guide")]
         [field: SerializeField] public PlayerOpeningGuide playerOpeningGuide { get; private set; }
-
+        [field: SerializeField] private bool nextPatrolPoint = false;
         [Header("UI")]
         [SerializeField] private GameObject followText;
         [SerializeField] private GameObject followText2;
@@ -85,7 +85,10 @@ namespace DS
 
         private void Idle()
         {
-            
+            if (nextPatrolPoint == true)
+            {
+                SwitchGuideMode(GuideState.patrol);
+            }
         }
         private void Patroling()
         {
@@ -98,8 +101,8 @@ namespace DS
                     // Jika sudah di patrol point terakhir
                     Debug.Log("Reached final patrol point. Deactivating GuideAI.");
                     followText?.SetActive(false); // Nonaktifkan teks
-                    gameObject.SetActive(false); // Nonaktifkan GameObject
                     followText2?.SetActive(true); // Aktifkan teks "Ikuti jejak kaki ini"
+                    SwitchGuideMode(GuideState.idle);
                 }
             }
         }
