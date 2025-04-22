@@ -10,6 +10,7 @@ namespace DS
     }
     public class GuideAI : MonoBehaviour
     {
+        public static GuideAI Instance { get; private set; }
         [field: SerializeField] public GuideState guideState { get; private set; }
         private Animator animator;
 
@@ -24,7 +25,7 @@ namespace DS
 
         [Header("Player Opening Guide")]
         [field: SerializeField] public PlayerOpeningGuide playerOpeningGuide { get; private set; }
-        [field: SerializeField] private bool nextPatrolPoint = false;
+        [field: SerializeField] public bool nextPatrolPoint = false;
         [Header("UI")]
         [SerializeField] private GameObject followText;
         [SerializeField] private GameObject followText2;
@@ -32,6 +33,10 @@ namespace DS
         {
             animator = GetComponentInChildren<Animator>();
 
+            if (Instance == null)
+            {
+                Instance = this;
+            }
             if (playerOpeningGuide == null)
             {
                 playerOpeningGuide = FindFirstObjectByType<PlayerOpeningGuide>();
