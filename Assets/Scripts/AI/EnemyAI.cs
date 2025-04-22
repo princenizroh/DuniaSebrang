@@ -44,6 +44,7 @@ namespace DS
         private void Awake()
         {
             animator = GetComponentInChildren<Animator>();
+            rb = GetComponent<Rigidbody>();
         }
         private void Start()
         {
@@ -59,24 +60,29 @@ namespace DS
             {
                 case MoveMode.patrol:
                     Patroling();
+                    animator.Play("Walk");
                     break;
                 case MoveMode.chase:
                     Chasing();
+                    animator.Play("Run");
                     break;
                 case MoveMode.wait:
                     Waiting();
+                    animator.Play("Idle");
                     break;
             }
 
             FieldOfView();
-            Animations();
+            // Animations();
         }
 
         private void Animations()
         {
            if (animator == null) return;
 
-            animator.SetBool("isRunning", moveMode == MoveMode.chase);
+            // animator.SetBool("isChasing", moveMode == MoveMode.chase);
+            // animator.SetBool("isWaiting", moveMode == MoveMode.wait);
+            // animator.SetBool("isPatroling", moveMode == MoveMode.patrol);
         }
 
         private void Patroling()
