@@ -3,7 +3,7 @@ using Game.Core;
 
 namespace Game.Data.Audio
 {
-    [CreateAssetMenu(fileName = "NewMusicData", menuName = "Game Data/Music")]
+    [CreateAssetMenu(fileName = "NewMusicData", menuName = "Game Data/Audio/Music")]
     public class MusicData : BaseDataObject
     {
         public AudioClip audioClip;
