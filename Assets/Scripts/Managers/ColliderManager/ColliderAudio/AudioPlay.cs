@@ -1,5 +1,5 @@
 using UnityEngine;
-using Game.Data.Audio;
+using DS.Data.Audio;
 
 namespace DS
 {

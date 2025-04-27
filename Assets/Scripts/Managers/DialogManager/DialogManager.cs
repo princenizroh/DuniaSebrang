@@ -1,8 +1,7 @@
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 using System.Collections.Generic;
 using System.Collections;
+using DS.Data.Dialog;
 
 
 namespace DS
@@ -38,7 +37,7 @@ namespace DS
             ui.ShowDialog(speaker + line.text);
 
             if (line.voiceClip)
-                AudioSource.PlayClipAtPoint(line.voiceClip, UnityEngine.Vector3.zero);
+                AudioSource.PlayClipAtPoint(line.voiceClip, Vector3.zero);
 
             yield return new WaitForSeconds(line.duration);
             ui.HideDialog();

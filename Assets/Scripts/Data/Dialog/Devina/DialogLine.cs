@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace DS
+namespace DS.Data.Dialog
 {
     [System.Serializable]
     public class DialogLine 

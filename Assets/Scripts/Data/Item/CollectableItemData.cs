@@ -1,7 +1,7 @@
 using UnityEngine;
 using Game.Core;
 
-namespace DS
+namespace DS.Data.Item
 {
     [CreateAssetMenu(menuName = "Game Data/Item/Collectable Item", fileName = "New Collectable Item")]
     public class CollectableItemData : BaseDataObject

@@ -1,5 +1,5 @@
 using UnityEngine;
-using System.Collections.Generic;
+using DS.Data.Item;
 
 namespace DS
 {
@@ -8,9 +8,6 @@ namespace DS
         public static ItemManager Instance { get; private set; }
         private CollectableItemData currentHeldItemData;
         private PlayerVisualItemHandler visualItemHandler;
-        public bool IsHoldingItem() => currentHeldItemData != null;
-        public CollectableItemData CurrentHeldItemData => currentHeldItemData;
-
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -19,7 +16,6 @@ namespace DS
                 return;
             }
             Instance = this;
-
             visualItemHandler = FindFirstObjectByType<PlayerVisualItemHandler>();
             if (visualItemHandler == null)
             {
@@ -30,34 +26,25 @@ namespace DS
         public bool Collect(CollectableItemData data, GameObject sourceObject)
         {
             if (data == null) return false;
-
             if (currentHeldItemData != null)
             {
                 Debug.Log("Sudah memegang item lain, buang dulu.");
                 DropCurrentItem();
             }
-
             currentHeldItemData = data;
-
-            PlayerVisualItemHandler.Instance.HoldItem(data.itemPrefab);
-
+            visualItemHandler.HoldItem(data.itemPrefab);
             Destroy(sourceObject);
-
             return true;
         }
-
-        public CollectableItemData GetCurrentHeldItemData()
-        {
-            return currentHeldItemData;
-        }
-
+        public bool IsHoldingItem() => currentHeldItemData != null;
+        public CollectableItemData GetCurrentHeldItemData() => currentHeldItemData;
         public void DropCurrentItem()
         {
             if (currentHeldItemData == null) return;
 
             GameObject droppedItem = Instantiate(
                 currentHeldItemData.itemPrefab,
-                PlayerVisualItemHandler.Instance.holdPoint.position + Vector3.forward * 0.5f,
+                visualItemHandler.holdPoint.position + Vector3.forward * 0.5f,
                 Quaternion.identity
             );
 
@@ -70,7 +57,7 @@ namespace DS
                 Debug.LogWarning("Prefab item tidak memiliki komponen CollectableItem!");
             }
 
-            PlayerVisualItemHandler.Instance.DropItem();
+            visualItemHandler.DropItem();
 
             currentHeldItemData = null;
         }

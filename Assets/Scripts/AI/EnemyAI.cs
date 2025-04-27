@@ -27,7 +27,6 @@ namespace DS
         [field: SerializeField] public Transform[] patrolPoint { get; private set; }
         [field: SerializeField] public NavMeshAgent agent { get; private set; }
         [field: SerializeField] public Transform currentTarget { get; private set; }
-        private bool isChasing = false;
 
         [Header("Field of View")]
         [field: SerializeField] public float viewRadius { get; private set; }

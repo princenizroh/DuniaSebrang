@@ -1,7 +1,7 @@
 using UnityEngine;
 using Game.Core;
 
-namespace Game.Data.Audio
+namespace DS.Data.Audio
 {
     [CreateAssetMenu(fileName = "NewMusicData", menuName = "Game Data/Audio/Music")]
     public class MusicData : BaseDataObject

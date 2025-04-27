@@ -1,4 +1,5 @@
 using UnityEngine;
+using DS.Data.Dialog;
 
 namespace DS
 {
