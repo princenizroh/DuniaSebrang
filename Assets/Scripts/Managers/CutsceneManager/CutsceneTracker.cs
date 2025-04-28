@@ -22,17 +22,19 @@ namespace DS
             DontDestroyOnLoad(gameObject);
         }
 
-        public bool HasPlayed(CutsceneData cutsceneData)
+        public bool HasPlayedStep(CutsceneData cutsceneData, int stepIndex)
         {
-            return playedCutscenes.Contains(cutsceneData.Id) || cutsceneData.hasPlayed;
+            if (cutsceneData == null || stepIndex < 0 || stepIndex >= cutsceneData.steps.Count)
+                return true; // Kalau error data, dianggap sudah main
+
+            return cutsceneData.steps[stepIndex].hasPlayed;
         }
 
-        public void MarkAsPlayed(CutsceneData cutsceneData)
+        public void MarkStepAsPlayed(CutsceneData cutsceneData, int stepIndex)
         {
-            if (!playedCutscenes.Contains(cutsceneData.Id))
+            if (cutsceneData != null && stepIndex >= 0 && stepIndex < cutsceneData.steps.Count)
             {
-                playedCutscenes.Add(cutsceneData.Id);
-                cutsceneData.hasPlayed = true;
+                cutsceneData.steps[stepIndex].hasPlayed = true;
             }
         }
     }
