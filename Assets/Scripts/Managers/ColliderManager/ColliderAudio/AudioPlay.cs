@@ -1,58 +1,62 @@
 using UnityEngine;
-using Game.Data.Audio;
+using DS.Data.Audio;
 
 namespace DS
 {
-[RequireComponent(typeof(Collider))]
-[RequireComponent(typeof(AudioSource))]
-public class AudioPlay : MonoBehaviour
-{
-    [Header("Referensi Data Musik")]
-    public MusicData musicData;
-
-    private AudioSource _audioSource;
-
-    private void Awake()
+    [RequireComponent(typeof(Collider))]
+    [RequireComponent(typeof(AudioSource))]
+    public class AudioPlay : MonoBehaviour
     {
-        _audioSource = GetComponent<AudioSource>();
-        SetupAudioSource();
-    }
+        [Header("Referensi Data Musik")]
+        public MusicData musicData;
+        private AudioSource _audioSource;
+        [SerializeField] private float minDistance = 1f;
+        [SerializeField] private float maxDistance = 15f;
 
-    private void SetupAudioSource()
-    {
-        if (musicData == null || musicData.audioClip == null)
+        private void Awake()
         {
-            Debug.LogWarning($"[ColliderAudio] MusicData belum diisi pada {gameObject.name}");
-            return;
+            _audioSource = GetComponent<AudioSource>();
+            SetupAudioSource();
         }
 
-        _audioSource.clip = musicData.audioClip;
-        _audioSource.volume = musicData.volume;
-        _audioSource.loop = musicData.loop;
-
-        _audioSource.spatialBlend = 1f; // 3D audio
-        _audioSource.rolloffMode = AudioRolloffMode.Linear;
-        _audioSource.minDistance = 1f;
-        _audioSource.maxDistance = 15f; // Jarak dengar maksimum
-        _audioSource.playOnAwake = false;
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("Player"))
+        private void SetupAudioSource()
         {
-            _audioSource.Play();
-            Debug.Log($"[ColliderAudio] Musik diputar: {musicData.name}");
+            if (musicData == null || musicData.audioClip == null)
+            {
+                Debug.LogWarning($"[ColliderAudio] MusicData belum diisi pada {gameObject.name}");
+                return;
+            }
+
+            _audioSource.clip = musicData.audioClip;
+            _audioSource.volume = musicData.volume;
+            _audioSource.loop = musicData.loop;
+
+            _audioSource.spatialBlend = 1f; // 3D audio
+            _audioSource.rolloffMode = AudioRolloffMode.Linear;
+            _audioSource.minDistance = minDistance;
+            _audioSource.maxDistance = maxDistance; // Jarak dengar maksimum
+            _audioSource.playOnAwake = false;
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.CompareTag("Player"))
+            {
+                _audioSource.Play();
+                Debug.Log($"[ColliderAudio] Musik diputar: {musicData.name}");
+            }
+        }
+        private void OnDrawGizmos()
+        {
+            if (_audioSource == null) return;
+
+            // Warna untuk minDistance
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(transform.position, _audioSource.minDistance);
+
+            // Warna untuk maxDistance
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(transform.position, _audioSource.maxDistance);
         }
     }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            _audioSource.Stop();
-            Debug.Log($"[ColliderAudio] Musik dihentikan: {musicData.name}");
-        }
-    }
-}
 }

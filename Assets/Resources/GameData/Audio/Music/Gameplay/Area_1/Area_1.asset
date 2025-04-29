@@ -15,4 +15,4 @@ MonoBehaviour:
   id: area_1
   audioClip: {fileID: 8300000, guid: ab32039f944e5bc4eadde31090ce8f7d, type: 3}
   volume: 1
-  loop: 1
+  loop: 0

@@ -1,8 +1,8 @@
 using UnityEngine;
 using Game.Core;
 
-namespace Game.Data.Audio
+namespace DS.Data.Audio
 {
-    [CreateAssetMenu(fileName = "MusicLibrary", menuName = "Game Data/Music Library")]
+    [CreateAssetMenu(fileName = "MusicLibrary", menuName = "Game Data/Audio/Music Library")]
     public class MusicLibrary : DataLibrary<MusicData> { }
 }
