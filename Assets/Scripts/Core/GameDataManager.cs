@@ -7,7 +7,7 @@ namespace Game.Core
     {
         public static GameDataManager Instance { get; private set; }
 
-        public MusicLibrary area1MusicLibrary;
+        // public MusicLibrary area1MusicLibrary;
 
         private void Awake()
         {
@@ -22,10 +22,10 @@ namespace Game.Core
             DontDestroyOnLoad(gameObject);
 
             // Contoh load manual jika belum assign via Inspector
-            if (area1MusicLibrary == null)
-            {
-                area1MusicLibrary = Resources.Load<MusicLibrary>("Game Data/Music/Gameplay/Area 1/Area1_MusicLibrary");
-            }
+            // if (area1MusicLibrary == null)
+            // {
+            //     area1MusicLibrary = Resources.Load<MusicLibrary>("Game Data/Music/Gameplay/Area 1/Area1_MusicLibrary");
+            // }
         }
     }
 }
