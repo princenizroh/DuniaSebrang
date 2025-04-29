@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea5724495876f4d46ac1ee994623da62, type: 3}
   m_Name: Area_0
   m_EditorClassIdentifier: 
-  id: 
-  AudioName: 
-  audioClip: {fileID: 0}
+  id: area_0
+  AudioName: Scream slow
+  audioClip: {fileID: 8300000, guid: 7afcb77bce2b00a408f4e0cf9d933fb4, type: 3}
   type: 0
   volume: 1
   loop: 0
   minDistance: 1
-  maxDistance: 15
+  maxDistance: 10.11
   playOnAwake: 0

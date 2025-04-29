@@ -66,6 +66,7 @@ namespace DS
             source.rolloffMode = AudioRolloffMode.Linear;
             source.minDistance = data.minDistance;
             source.maxDistance = data.maxDistance;
+            audioSource.playOnAwake = data.playOnAwake;
 
             source.Play();
 

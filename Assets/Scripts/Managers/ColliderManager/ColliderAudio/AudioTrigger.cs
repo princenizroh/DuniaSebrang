@@ -27,7 +27,6 @@ namespace DS
                     AudioManager.Instance.PlayMusic(audioData);
                     break;
                 case AudioCategory.SFX:
-                case AudioCategory.Ambience:
                     AudioManager.Instance.PlaySFX(audioData, transform.position);
                     break;
                 default:
