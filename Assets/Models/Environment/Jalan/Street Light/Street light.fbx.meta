@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: c68ce9a5e2736e740bcb8740906a7400
+guid: 69ba92c7e969bff459747f094b19abd4
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
@@ -7,8 +7,13 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: Cable.001
-    second: {fileID: 2100000, guid: f71d190e529fe7643a72a3e4859d02bf, type: 2}
+      name: Lampu
+    second: {fileID: 2100000, guid: 937ea92a235dba345a5cf3cc41815ff9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: baterai
+    second: {fileID: 2100000, guid: ed62a2cfd98f4854781f5835e31da816, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -37,8 +42,10 @@ ModelImporter:
     clipAnimations: []
     isReadable: 0
   meshes:
-    lODScreenPercentages: []
-    globalScale: 1
+    lODScreenPercentages:
+    - 0.25
+    - 0.01
+    globalScale: 1.4
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
@@ -93,7 +100,7 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
-    globalScale: 1
+    globalScale: 0.0139999995
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0

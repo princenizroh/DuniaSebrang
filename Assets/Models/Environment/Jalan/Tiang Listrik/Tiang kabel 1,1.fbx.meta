@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 69ba92c7e969bff459747f094b19abd4
+guid: 20846441b40437646a86499380b54dbd
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
@@ -7,13 +7,13 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: Lampu
-    second: {fileID: 2100000, guid: 937ea92a235dba345a5cf3cc41815ff9, type: 2}
+      name: BaseWoodPole
+    second: {fileID: 2100000, guid: 79415033f4a66e54a80d729b3edce3f9, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: baterai
-    second: {fileID: 2100000, guid: ed62a2cfd98f4854781f5835e31da816, type: 2}
+      name: SquareTransformer
+    second: {fileID: 2100000, guid: 9f79103d64f166c46ab996b780528307, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -45,7 +45,7 @@ ModelImporter:
     lODScreenPercentages:
     - 0.25
     - 0.01
-    globalScale: 1
+    globalScale: 1.6
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
@@ -100,7 +100,7 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
-    globalScale: 1
+    globalScale: 0.016
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0
