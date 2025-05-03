@@ -1,39 +1,9 @@
 fileFormatVersion: 2
-guid: b6f57dcf1594a2c4ab4c35cdbc85fe92
+guid: 0c38fd5921cea8d49ad14710a8b160e7
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects:
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: Besi
-    second: {fileID: 2100000, guid: f37b5453a97538b419a30efddda1e325, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: Papan3
-    second: {fileID: 2100000, guid: 82920c179dd57594a83dc8f015fe2b5d, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: Papan4
-    second: {fileID: 2100000, guid: e917de589fa513f4da2f5cefdbe8acb7, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: Seng1
-    second: {fileID: 2100000, guid: 826fa1d605cbc3e44b6281553793bf70, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: Seng2
-    second: {fileID: 2100000, guid: 4d85e4f41e2c2f64db014bdd9cc18943, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: Wire
-    second: {fileID: 2100000, guid: 71e6eba9b4a25b34c962daec7b4f7316, type: 2}
+  externalObjects: {}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -63,7 +33,7 @@ ModelImporter:
     isReadable: 0
   meshes:
     lODScreenPercentages: []
-    globalScale: 2
+    globalScale: 1
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
@@ -118,7 +88,7 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
-    globalScale: 0.02
+    globalScale: 1
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0
