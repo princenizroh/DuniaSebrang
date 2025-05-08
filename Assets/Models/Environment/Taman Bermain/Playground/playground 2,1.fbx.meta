@@ -3,7 +3,12 @@ guid: 478011c4fb942a94c8e466bfc73778fd
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: taman 2
+    second: {fileID: 2100000, guid: 51c72d59db74c1148b0e6f2134d84813, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -35,7 +40,7 @@ ModelImporter:
     lODScreenPercentages:
     - 0.25
     - 0.01
-    globalScale: 2
+    globalScale: 1.7
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
@@ -90,7 +95,7 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
-    globalScale: 0.02
+    globalScale: 1.7
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0

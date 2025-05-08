@@ -3,7 +3,17 @@ guid: 7a83bc48f979f5c4288eb2045673eff5
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Papan 1.001
+    second: {fileID: 2100000, guid: 724e0e01664187f40886de4ad45237f8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Papan3.001
+    second: {fileID: 2100000, guid: 2efb08deebf371e46a2c30b885168f48, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
