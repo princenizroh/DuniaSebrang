@@ -3,7 +3,12 @@ guid: a2145877e078fbc4fa5fa7aeb52e976c
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Lantai 1
+    second: {fileID: 2100000, guid: de3112f9e1e7e31459e60196d0bb597f, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

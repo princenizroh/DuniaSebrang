@@ -3,7 +3,17 @@ guid: f45f3bef18494224d9481e7408836908
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PI_BOX
+    second: {fileID: 2100000, guid: ace7ff8f5d9e5974699c7c6caed40cd9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PI_BOX_SIDE
+    second: {fileID: 2100000, guid: 844e3b38216e4e146a3d270e246a7c37, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -90,7 +100,7 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
-    globalScale: 0.016
+    globalScale: 1.6
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0
