@@ -4,18 +4,18 @@ namespace DS
 {
     public class ShaderScript : MonoBehaviour
     {
-        private BoxCollider boxCollider;
+        private CapsuleCollider capCollider;
 
         void Start()
         {
-            boxCollider = GetComponent<BoxCollider>();
+            capCollider = GetComponent<CapsuleCollider>();
         }
 
         void Update()
         {
-            if (boxCollider != null)
+            if (capCollider != null)
             {
-                Shader.SetGlobalVector("_Player", transform.position + Vector3.up * (boxCollider.size.y / 2f));
+                Shader.SetGlobalVector("_Player", transform.position + Vector3.up * capCollider.radius);
             }
         }
     }

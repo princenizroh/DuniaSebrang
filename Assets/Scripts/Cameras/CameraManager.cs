@@ -6,11 +6,14 @@ public class CameraManager : MonoBehaviour
     public CinemachineCamera[] cameras;
     public CinemachineCamera startCamera;
     private CinemachineCamera currentCam;
+    private int currentCamIndex;
+
+    public int CurrentCameraIndex => currentCamIndex;
 
     private void Start()
     {
-        // Set kamera awal
         currentCam = startCamera;
+        currentCamIndex = System.Array.IndexOf(cameras, currentCam);
 
         for (int i = 0; i < cameras.Length; i++)
         {
@@ -26,11 +29,18 @@ public class CameraManager : MonoBehaviour
             return;
         }
 
+        if (cameraIndex == currentCamIndex)
+        {
+            // Sudah pakai kamera yang ini
+            return;
+        }
+
         // Matikan kamera saat ini
         currentCam.enabled = false;
 
         // Aktifkan kamera baru
         currentCam = cameras[cameraIndex];
         currentCam.enabled = true;
+        currentCamIndex = cameraIndex;
     }
 }
