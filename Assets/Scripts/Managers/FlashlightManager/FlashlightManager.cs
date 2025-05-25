@@ -10,14 +10,22 @@ namespace DS
         [SerializeField] Transform targetPositionOn; // Posisi target saat flashlight menyala
         [SerializeField] Transform targetPositionOff; // Posisi target saat flashlight mati
         [SerializeField] float transitionSpeed = 2f; // Kecepatan transisi weight
-        private bool isFlashlightOn = true; // Status flashlight
+        [SerializeField] private Transform aimTarget;
+        [SerializeField] private float aimSpeed = 1f;
+        [SerializeField] private Vector2 xRange = new Vector2(-1f, 1f);
+        [SerializeField] private Vector2 yRange = new Vector2(-0.5f, 1f);
+        [SerializeField] private float fixedZ = 1f;
 
+        private Vector3 aimOffset = Vector3.zero;
+        private bool isFlashlightOn = false; // Status flashlight
         private void Awake()
         {
             if (TwoBoneIKConstraint == null)
             {
                 TwoBoneIKConstraint = GetComponent<TwoBoneIKConstraint>();
             }
+            if (flashlightTransform != null)
+                flashlightTransform.gameObject.SetActive(false);
         }
         public void Update()
         {
@@ -25,9 +33,26 @@ namespace DS
             {
                 ToggleFlashlight();
             }
+            UpdateAimDirection();
 
             UpdateWeight();
             UpdateFlashlightTransform();
+        }
+
+        private void UpdateAimDirection()
+        {
+            float xInput = Input.GetAxisRaw("AimHorizontal");
+            float yInput = Input.GetAxisRaw("AimVertical");
+
+            Vector2 input = new Vector2(xInput, yInput).normalized;
+            aimOffset += new Vector3(input.x, input.y, 0f) * aimSpeed * Time.deltaTime;
+
+            // Clamp supaya aim tidak terlalu jauh
+            aimOffset.x = Mathf.Clamp(aimOffset.x, xRange.x, xRange.y);
+            aimOffset.y = Mathf.Clamp(aimOffset.y, yRange.x, yRange.y);
+
+            // Tetap di depan karakter (z tetap)
+            aimTarget.localPosition = new Vector3(aimOffset.x, aimOffset.y, fixedZ);
         }
 
         private void UpdateWeight()
@@ -64,7 +89,7 @@ namespace DS
             // Toggle flashlight visibility only when turning it on
             if (isFlashlightOn)
             {
-                // flashlightTransform.gameObject.SetActive(true);
+                flashlightTransform.gameObject.SetActive(true);
             }
             else
             {
@@ -80,7 +105,7 @@ namespace DS
                 yield return null; // Wait for the next frame
             }
 
-            // flashlightTransform.gameObject.SetActive(false);
+            flashlightTransform.gameObject.SetActive(false);
         }
     }
 }

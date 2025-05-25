@@ -1,0 +1,11 @@
+All of the textures are 2048x2048 HD PNGs 
+Feel Free to downscale them for optimization
+The model has only 621 Verts
+
+The assets are rigged and animated.
+Every finger + wrist are animated separately, meaning that you can move them all.
+The model is intended for VR, so there are no preset animations.
+
+For further indormation feel free to contact me (info on store page)
+
+Best regards, the developer of the package.
