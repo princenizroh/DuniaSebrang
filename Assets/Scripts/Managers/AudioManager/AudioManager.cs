@@ -25,14 +25,14 @@ namespace DS
 
         // -------------------- MUSIC --------------------
 
-        public void PlayMusic(AudioData data)
+        public void PlayMusic(AudioData data, Vector3 position)
         {
             if (data == null || data.audioClip == null || data.type != AudioCategory.Music)
             {
                 Debug.LogWarning("[AudioManager] Data musik tidak valid.");
                 return;
             }
-
+            audioSource.transform.position = position;
             audioSource.clip = data.audioClip;
             audioSource.volume = data.volume;
             audioSource.loop = data.loop;
@@ -42,6 +42,7 @@ namespace DS
             audioSource.maxDistance = data.maxDistance;
             audioSource.playOnAwake = data.playOnAwake;
             audioSource.Play();
+            
         }
 
         public void StopMusic()

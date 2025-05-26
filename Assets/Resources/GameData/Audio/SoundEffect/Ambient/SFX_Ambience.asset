@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: sfx_ambience
   AudioName: park
-  audioClip: {fileID: 0}
-  type: 2
+  audioClip: {fileID: 8300000, guid: eb06404e9e8255a4590af4261522856e, type: 3}
+  type: 1
   volume: 1
   loop: 0
   minDistance: 1

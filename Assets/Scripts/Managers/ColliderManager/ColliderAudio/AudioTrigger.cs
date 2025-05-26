@@ -7,8 +7,9 @@ namespace DS
     public class AudioTrigger : MonoBehaviour
     {
         [Header("Referensi Data Musik")]
-        public AudioData audioData;
-        public bool playOnce = true;
+        [SerializeField] AudioData audioData;
+        
+        [SerializeField] private bool playOnce = true;
         private bool hasPlayed = false;
 
 
@@ -24,7 +25,7 @@ namespace DS
             switch (audioData.type)
             {
                 case AudioCategory.Music:
-                    AudioManager.Instance.PlayMusic(audioData);
+                    AudioManager.Instance.PlayMusic(audioData, transform.position);
                     break;
                 case AudioCategory.SFX:
                     AudioManager.Instance.PlaySFX(audioData, transform.position);

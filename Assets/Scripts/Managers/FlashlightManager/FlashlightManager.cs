@@ -15,8 +15,8 @@ namespace DS
         [SerializeField] private Vector2 xRange = new Vector2(-1f, 1f);
         [SerializeField] private Vector2 yRange = new Vector2(-0.5f, 1f);
         [SerializeField] private float fixedZ = 1f;
-
-        private Vector3 aimOffset = Vector3.zero;
+        private Vector3 aimOffset = new Vector3(0f, 1f, 0f); 
+        private Vector3 targetOffset = new Vector3(0f, 1f, 0f); 
         private bool isFlashlightOn = false; // Status flashlight
         private void Awake()
         {
@@ -45,13 +45,16 @@ namespace DS
             float yInput = Input.GetAxisRaw("AimVertical");
 
             Vector2 input = new Vector2(xInput, yInput).normalized;
-            aimOffset += new Vector3(input.x, input.y, 0f) * aimSpeed * Time.deltaTime;
+            targetOffset += new Vector3(input.x, input.y, 0f) * aimSpeed * Time.deltaTime;
 
-            // Clamp supaya aim tidak terlalu jauh
-            aimOffset.x = Mathf.Clamp(aimOffset.x, xRange.x, xRange.y);
-            aimOffset.y = Mathf.Clamp(aimOffset.y, yRange.x, yRange.y);
+            // Clamp target
+            targetOffset.x = Mathf.Clamp(targetOffset.x, xRange.x, xRange.y);
+            targetOffset.y = Mathf.Clamp(targetOffset.y, yRange.x, yRange.y);
 
-            // Tetap di depan karakter (z tetap)
+            // Lerp menuju targetOffset
+            aimOffset = Vector3.Lerp(aimOffset, targetOffset, Time.deltaTime * 10f);
+
+            // Tetap di depan karakter
             aimTarget.localPosition = new Vector3(aimOffset.x, aimOffset.y, fixedZ);
         }
 
