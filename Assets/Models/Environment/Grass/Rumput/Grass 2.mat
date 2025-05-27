@@ -10,16 +10,21 @@ Material:
   m_Name: Grass 2
   m_Shader: {fileID: -6465566751694194690, guid: 0e9959c6cab71344a92a17270bc9d1c7, type: 3}
   m_Parent: {fileID: 2100000, guid: 0cf9acf06bf4fec48b6a51c937cc4fe0, type: 2}
-  m_ModifiedSerializedProperties: 4
-  m_ValidKeywords: []
+  m_ModifiedSerializedProperties: 20
+  m_ValidKeywords:
+  - _RECEIVE_SHADOWS_OFF
+  - _SURFACE_TYPE_TRANSPARENT
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
+  m_CustomRenderQueue: 3000
+  stringTagMap:
+    RenderType: Transparent
   disabledShaderPasses:
   - MOTIONVECTORS
+  - SHADOWCASTER
+  - DepthOnly
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -30,9 +35,12 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _DstBlend: 10
     - _Scale: 0.03
     - _Smoothness: 0.5
     - _Speed: 1
+    - _SrcBlend: 5
+    - _ZWrite: 0
     m_Colors:
     - _Albedo: {r: 1, g: 1, b: 1, a: 0}
   m_BuildTextureStacks: []

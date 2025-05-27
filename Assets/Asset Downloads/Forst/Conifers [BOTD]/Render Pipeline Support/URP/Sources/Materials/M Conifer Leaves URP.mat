@@ -63,7 +63,7 @@ Material:
     - _LeafTurbulence: 0.1
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _Smoothness: 0.68
+    - _Smoothness: 0.25
     - _TumbleFrequency: 0.6
     - _TumbleStrength: 0.012
     m_Colors:
