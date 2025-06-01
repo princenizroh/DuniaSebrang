@@ -4,65 +4,36 @@ namespace DS
 {
     public class TerrainDetector
     {
-        private TerrainData terrainData;
-        private int alphamapWidth;
-        private int alphamapHeight;
-        private float[,,] splatmapData;
-        private int numTextures;
+        private Terrain terrain;
 
         public TerrainDetector()
         {
-            if (Terrain.activeTerrain == null)
-            {
-                Debug.LogError("No active terrain found!");
-                return;
-            }
-
-            terrainData = Terrain.activeTerrain.terrainData;
-            alphamapWidth = terrainData.alphamapWidth;
-            alphamapHeight = terrainData.alphamapHeight;
-
-            splatmapData = terrainData.GetAlphamaps(0, 0, alphamapWidth, alphamapHeight);
-            numTextures = splatmapData.GetLength(2);
+            terrain = Terrain.activeTerrain;
         }
 
-        private Vector3 ConvertToSplatMapCoordinate(Vector3 worldPosition)
+        public int GetActiveTerrainTextureIdx(Vector3 worldPos)
         {
-            Terrain ter = Terrain.activeTerrain;
-            Vector3 terPosition = ter.transform.position;
+            TerrainData terrainData = terrain.terrainData;
+            Vector3 terrainPos = worldPos - terrain.transform.position;
 
-            float relativeX = (worldPosition.x - terPosition.x) / ter.terrainData.size.x;
-            float relativeZ = (worldPosition.z - terPosition.z) / ter.terrainData.size.z;
+            int mapX = Mathf.RoundToInt((terrainPos.x / terrainData.size.x) * terrainData.alphamapWidth);
+            int mapZ = Mathf.RoundToInt((terrainPos.z / terrainData.size.z) * terrainData.alphamapHeight);
 
-            int mapX = Mathf.Clamp(Mathf.RoundToInt(relativeX * alphamapWidth), 0, alphamapWidth - 1);
-            int mapZ = Mathf.Clamp(Mathf.RoundToInt(relativeZ * alphamapHeight), 0, alphamapHeight - 1);
+            float[,,] splatmapData = terrainData.GetAlphamaps(mapX, mapZ, 1, 1);
 
-            return new Vector3(mapX, 0, mapZ);
-        }
+            float maxMix = 0f;
+            int maxIndex = 0;
 
-        public int GetActiveTerrainTextureIdx(Vector3 position)
-        {
-            if (terrainData == null || splatmapData == null)
-                return 0;
-
-            Vector3 terrainCoord = ConvertToSplatMapCoordinate(position);
-            int x = (int)terrainCoord.x;
-            int z = (int)terrainCoord.z;
-
-            int activeIndex = 0;
-            float maxOpacity = 0f;
-
-            for (int i = 0; i < numTextures; i++)
+            for (int i = 0; i < terrainData.alphamapLayers; i++)
             {
-                float opacity = splatmapData[z, x, i];
-                if (opacity > maxOpacity)
+                if (splatmapData[0, 0, i] > maxMix)
                 {
-                    maxOpacity = opacity;
-                    activeIndex = i;
+                    maxMix = splatmapData[0, 0, i];
+                    maxIndex = i;
                 }
             }
 
-            return activeIndex;
+            return maxIndex; // returns the index of the most dominant texture
         }
     }
 }

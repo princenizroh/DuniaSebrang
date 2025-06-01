@@ -23,8 +23,8 @@ MonoBehaviour:
     m_OverrideState: 0
     m_Value: 50
   enableGround:
-    m_OverrideState: 0
-    m_Value: 0
+    m_OverrideState: 1
+    m_Value: 1
   groundHeight:
     m_OverrideState: 0
     m_Value: 0
@@ -65,7 +65,7 @@ MonoBehaviour:
     m_OverrideState: 1
     m_Value: 1
   renderPassEvent:
-    m_OverrideState: 0
+    m_OverrideState: 1
     m_Value: 550
 --- !u!114 &11400000
 MonoBehaviour:

@@ -13,7 +13,7 @@ namespace DS
         private void Awake()
         {
             audioSource = GetComponent<AudioSource>();
-            terrainDetector = new TerrainDetector();
+            terrainDetector = new TerrainDetector(); // Not MonoBehaviour, just a helper class
         }
 
         public void Step()
@@ -29,12 +29,12 @@ namespace DS
 
             switch (terrainIndex)
             {
-                case 0:
+                case 0: // Assuming 0 = stone
                     return stoneClips.Length > 0
                         ? stoneClips[Random.Range(0, stoneClips.Length)]
                         : null;
 
-                case 1:
+                case 1: // Assuming 1 = grass
                 default:
                     return grassClips.Length > 0
                         ? grassClips[Random.Range(0, grassClips.Length)]

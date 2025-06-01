@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Active: 1
   Settings:
-    Event: 550
+    Event: 50
     VolumetricFogMaterial: {fileID: 0}
     InstantiateMaterial: 0
 --- !u!114 &-5856290519351653784
@@ -74,8 +74,7 @@ MonoBehaviour:
   m_RendererFeatures:
   - {fileID: 7833122117494664109}
   - {fileID: -5856290519351653784}
-  - {fileID: -7238310943880322582}
-  m_RendererFeatureMap: ad6b866f10d7b46c688a8ef4cc46baaeeae130f88b5a8c9b
+  m_RendererFeatureMap: ad6b866f10d7b46c688a8ef4cc46baae
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -96,7 +95,7 @@ MonoBehaviour:
   m_ShadowTransparentReceive: 1
   m_RenderingMode: 2
   m_DepthPrimingMode: 0
-  m_CopyDepthMode: 0
+  m_CopyDepthMode: 1
   m_DepthAttachmentFormat: 0
   m_DepthTextureFormat: 0
   m_AccurateGbufferNormals: 0
