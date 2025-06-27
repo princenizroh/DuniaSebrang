@@ -21,14 +21,14 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Cahaya senter
-  m_Shader: {fileID: -6465566751694194690, guid: d080a915144b93640a8fc46ad3d3fefc, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 1b480a0df8811be438023001459ff883, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
+  m_DoubleSidedGI: 1
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses:
@@ -90,7 +90,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Texture2D:
-        m_Texture: {fileID: 2800000, guid: 40eeaaa0aa211f844900bb5e6d8ce810, type: 3}
+        m_Texture: {fileID: 2800000, guid: e56048cd94f80464fac0a3ed7f1040d3, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -107,12 +107,16 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - Boolean_52C16ADA: 1
+    - Vector1_C436030E: 0.1
+    - Vector1_D9BD7578: 0.4
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
     - _AlphaToMask: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
+    - _CastShadows: 0
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Cull: 2
@@ -121,14 +125,14 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _EdgeFalloff: 0.01
+    - _EdgeFalloff: 0.04
     - _EnvironmentReflections: 1
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
-    - _Opacity: 1.6
+    - _Opacity: 0.25
     - _Parallax: 0.005
     - _QueueControl: 0
     - _QueueOffset: 0
@@ -141,8 +145,11 @@ Material:
     - _Surface: 0
     - _UseTexture: 1
     - _WorkflowMode: 1
+    - _ZTest: 4
     - _ZWrite: 1
+    - _ZWriteControl: 0
     m_Colors:
+    - Color_686BCB55: {r: 1, g: 1, b: 1, a: 0}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1.2311444, g: 1.2311444, b: 1.2311444, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}

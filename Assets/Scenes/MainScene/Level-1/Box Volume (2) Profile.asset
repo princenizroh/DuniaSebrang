@@ -44,7 +44,7 @@ MonoBehaviour:
     m_Value: 0
   density:
     m_OverrideState: 1
-    m_Value: 0.644
+    m_Value: 1
   attenuationDistance:
     m_OverrideState: 0
     m_Value: 128
@@ -53,7 +53,7 @@ MonoBehaviour:
     m_Value: 1
   APVContributionWeight:
     m_OverrideState: 1
-    m_Value: 0.252
+    m_Value: 0.073
   enableMainLightContribution:
     m_OverrideState: 1
     m_Value: 1
