@@ -11,12 +11,13 @@ namespace DS
         [SerializeField] Transform targetPositionOff; // Posisi target saat flashlight mati
         [SerializeField] float transitionSpeed = 2f; // Kecepatan transisi weight
         [SerializeField] private Transform aimTarget;
-        [SerializeField] private float aimSpeed = 1f;
+        [SerializeField] private float aimSpeed = 0.5f; // Turunkan speed agar tidak terlalu sensitif
         [SerializeField] private Vector2 xRange = new Vector2(-1f, 1f);
         [SerializeField] private Vector2 yRange = new Vector2(-0.5f, 1f);
         [SerializeField] private float fixedZ = 1f;
-        private Vector3 aimOffset = new Vector3(0f, 1f, 0f); 
-        private Vector3 targetOffset = new Vector3(0f, 1f, 0f); 
+        [SerializeField] private bool useWorldSpaceAiming = true; // Gunakan koordinat dunia untuk aiming
+        private Vector3 aimOffset = new Vector3(0f, 0f, 0f);
+        private Vector3 targetOffset = new Vector3(0f, 0f, 0f);
         private bool isFlashlightOn = false; // Status flashlight
         private void Awake()
         {
@@ -41,11 +42,60 @@ namespace DS
 
         private void UpdateAimDirection()
         {
-            float xInput = Input.GetAxisRaw("AimHorizontal");
-            float yInput = Input.GetAxisRaw("AimVertical");
+            float xInput = 0f;
+            float yInput = 0f;
 
-            Vector2 input = new Vector2(xInput, yInput).normalized;
-            targetOffset += new Vector3(input.x, input.y, 0f) * aimSpeed * Time.deltaTime;
+            // Coba gunakan Input Manager terlebih dahulu
+            try
+            {
+                xInput = Input.GetAxisRaw("AimHorizontal");
+                yInput = Input.GetAxisRaw("AimVertical");
+            }
+            catch (System.Exception)
+            {
+                // Input Manager tidak ditemukan, gunakan arrow keys langsung
+            }
+
+            // Fallback: gunakan arrow keys jika tidak ada input dari Input Manager
+            if (Mathf.Abs(xInput) < 0.01f && Mathf.Abs(yInput) < 0.01f)
+            {
+                if (Input.GetKey(KeyCode.RightArrow)) xInput = 1f;
+                else if (Input.GetKey(KeyCode.LeftArrow)) xInput = -1f;
+                
+                if (Input.GetKey(KeyCode.UpArrow)) yInput = 1f;
+                else if (Input.GetKey(KeyCode.DownArrow)) yInput = -1f;
+            }
+
+            Vector2 input = new Vector2(xInput, yInput);
+            
+            // Debug input untuk memastikan input terdeteksi
+            if (input.magnitude > 0.01f)
+            {
+                Debug.Log($"Flashlight Input: {input}, Player Forward: {transform.forward}");
+            }
+            
+            // Sistem dengan deteksi arah hadap player
+            if (input.magnitude > 0.01f)
+            {
+                // Perbaikan untuk hadap kamera: deteksi arah hadap player
+                float adjustedXInput = input.x;
+                Vector3 playerForward = transform.forward;
+                
+                // Jika player menghadap ke arah kamera (forward.z < 0), balik input horizontal
+                if (playerForward.z < -0.5f) // Threshold untuk mendeteksi hadap kamera
+                {
+                    adjustedXInput = -input.x; // Balik input horizontal untuk hadap kamera
+                    Debug.Log($"Player facing camera - Input X flipped: {input.x} -> {adjustedXInput}");
+                }
+                
+                // Langsung gunakan input yang sudah disesuaikan untuk update targetOffset
+                targetOffset += new Vector3(adjustedXInput, input.y, 0f) * aimSpeed * Time.deltaTime;
+            }
+            else
+            {
+                // Tidak ada input - kembali ke center
+                targetOffset = Vector3.Lerp(targetOffset, Vector3.zero, Time.deltaTime * 5f);
+            }
 
             // Clamp target
             targetOffset.x = Mathf.Clamp(targetOffset.x, xRange.x, xRange.y);
@@ -54,8 +104,14 @@ namespace DS
             // Lerp menuju targetOffset
             aimOffset = Vector3.Lerp(aimOffset, targetOffset, Time.deltaTime * 10f);
 
+            // Debug targetOffset untuk troubleshooting
+            if (Mathf.Abs(targetOffset.x) > 0.01f || Mathf.Abs(targetOffset.y) > 0.01f)
+            {
+                Debug.Log($"Flashlight TargetOffset: {targetOffset}, AimOffset: {aimOffset}");
+            }
+
             // Tetap di depan karakter
-            aimTarget.localPosition = new Vector3(aimOffset.x, aimOffset.y, fixedZ);
+            aimTarget.localPosition = new Vector3(aimOffset.x, aimOffset.y + 1f, fixedZ);
         }
 
         private void UpdateWeight()
@@ -109,6 +165,31 @@ namespace DS
             }
 
             flashlightTransform.gameObject.SetActive(false);
+        }
+        
+        public Vector3 GetAimOffset()
+        {
+            return aimOffset;
+        }
+
+        public bool IsFlashlightOn()
+        {
+            return isFlashlightOn;
+        }
+
+        public float GetFlashlightWeight()
+        {
+            return TwoBoneIKConstraint != null ? TwoBoneIKConstraint.weight : 0f;
+        }
+
+        public void SetUseWorldSpaceAiming(bool useWorldSpace)
+        {
+            useWorldSpaceAiming = useWorldSpace;
+        }
+
+        public bool GetUseWorldSpaceAiming()
+        {
+            return useWorldSpaceAiming;
         }
     }
 }

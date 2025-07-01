@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d4f200e077cbbb4286ff78870a34d60, type: 3}
+  m_Name: Collide-Area_0
+  m_EditorClassIdentifier: 
+  id: collide-area_0
+  dialogLines:
+  - id: 0
+    speakerName: Devina
+    text: Sepertinya terlalu seram untuk kesana
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 1
+    speakerName: Devina
+    text: Aku takut untuk kesana
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 2
+    speakerName: Devina
+    text: Sepertinya disana sangat berbahaya
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 3
+    speakerName: Devina
+    text: Gak usah kesana deh
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 4
+    speakerName: Devina
+    text: Sepertinya disana tidak aman untuk dimasuki
+    voiceClip: {fileID: 0}
+    duration: 3
+  oneTimePlay: 1

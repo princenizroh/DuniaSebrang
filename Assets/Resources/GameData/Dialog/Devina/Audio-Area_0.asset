@@ -14,12 +14,59 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: audio-area_0
   dialogLines:
-  - speakerName: Devina
-    text: Rara Kamu Dimana
-    voiceClip: {fileID: 8300000, guid: 192fbb61cc0128f4badd8e50669daa8c, type: 3}
+  - id: 0
+    speakerName: Devina
+    text: Rara.. Kamu merepotkanku hanya untuk mencarimu
+    voiceClip: {fileID: 0}
     duration: 3
-  - speakerName: Devina
-    text: Tempat Apa ini
-    voiceClip: {fileID: 8300000, guid: 802460f72a277f94290fcf1190f5a934, type: 3}
+  - id: 1
+    speakerName: Devina
+    text: Rara kamu dimana sih..f
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 2
+    speakerName: Devina
+    text: Ihh Bau banget sampahnya mau muntah rasanya
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 3
+    speakerName: Devina
+    text: Doc Hudson?? Itu anda??
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 4
+    speakerName: Devina
+    text: Oh.. Sepertinya disana jalan keluarnya
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 5
+    speakerName: Devina
+    text: Dimana jalan keluarnya ya..
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 6
+    speakerName: Devina
+    text: Tempat ini... gelap banget. Bukan hutan biasa...
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 7
+    speakerName: Devina
+    text: Rara...? Kamu di sini?
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 8
+    speakerName: Devina
+    text: Kenapa hawanya dingin banget... ini gak enak...
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 9
+    speakerName: Devina
+    text: Astaga... suara apa itu? Jangan-jangan Rara?
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 10
+    speakerName: Devina
+    text: Tenang Devina gak boleh panik... fokus cari dia.
+    voiceClip: {fileID: 0}
     duration: 3
   oneTimePlay: 1
