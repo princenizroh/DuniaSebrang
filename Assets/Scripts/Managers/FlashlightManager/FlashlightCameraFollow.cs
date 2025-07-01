@@ -7,7 +7,7 @@ namespace DS
     {
         // Komponen yang diperlukan
         [SerializeField] private FlashlightManager flashlightManager;
-        [SerializeField] private CinemachineCamera cinemachineCamera;
+        [SerializeField] private CinemachineCamera[] cinemachineCameras; // Array untuk multiple cameras
         [SerializeField] private Transform playerTransform; // Transform player untuk mengetahui arah hadap
         [SerializeField] private float offsetStrength = 3f; // Nilai lebih kecil untuk responsivitas lebih baik
         [SerializeField] private float smoothSpeed = 8f; // Lebih cepat
@@ -20,23 +20,12 @@ namespace DS
 
         private float currentEffectStrength = 0f; // Untuk fade in/out effect
         private Vector2 defaultPanTilt = Vector2.zero; // Posisi default pan/tilt
+        private CinemachineCamera currentActiveCamera = null; // Cache untuk camera yang sedang aktif
 
         private void Start()
         {
-            if (cinemachineCamera != null)
-            {
-                var panTilt = cinemachineCamera.GetComponent<CinemachinePanTilt>();
-                if (panTilt != null)
-                {
-                    Debug.Log("Using Pan Tilt for camera control");
-                    // Simpan posisi default pan/tilt
-                    defaultPanTilt = new Vector2(panTilt.PanAxis.Value, panTilt.TiltAxis.Value);
-                }
-                else
-                {
-                    Debug.LogWarning("No Pan Tilt component found. Please set Rotation Control to 'Pan Tilt' in Cinemachine Camera.");
-                }
-            }
+            // Initialize default pan/tilt values untuk semua cameras
+            InitializeAllCameras();
 
             // Auto-assign player transform jika tidak di-set manual
             if (playerTransform == null && flashlightManager != null)
@@ -45,9 +34,45 @@ namespace DS
             }
         }
 
+        private void InitializeAllCameras()
+        {
+            if (cinemachineCameras == null || cinemachineCameras.Length == 0)
+            {
+                Debug.LogWarning("No Cinemachine Cameras assigned to FlashlightCameraFollow!");
+                return;
+            }
+
+            foreach (var camera in cinemachineCameras)
+            {
+                if (camera != null)
+                {
+                    var panTilt = camera.GetComponent<CinemachinePanTilt>();
+                    if (panTilt != null)
+                    {
+                        Debug.Log($"Initialized Pan Tilt for camera: {camera.name}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"No Pan Tilt component found on camera: {camera.name}. Please set Rotation Control to 'Pan Tilt' in Cinemachine Camera.");
+                    }
+                }
+            }
+        }
+
         private void LateUpdate()
         {
-            if (flashlightManager == null || cinemachineCamera == null) return;
+            if (flashlightManager == null) return;
+
+            // Dapatkan camera yang sedang aktif
+            CinemachineCamera activeCamera = GetActiveCamera();
+            if (activeCamera == null) return;
+
+            // Update currentActiveCamera dan default pan/tilt jika berubah
+            if (currentActiveCamera != activeCamera)
+            {
+                currentActiveCamera = activeCamera;
+                UpdateDefaultPanTilt(activeCamera);
+            }
 
             // Tentukan strength berdasarkan status flashlight
             float targetStrength = 1f;
@@ -70,23 +95,70 @@ namespace DS
             // Jika FlashlightManager menggunakan world space aiming, tidak perlu konversi lagi
             Vector3 cameraRelativeOffset = aimOffset;
             
-            // Gunakan Pan Tilt component
-            var panTilt = cinemachineCamera.GetComponent<CinemachinePanTilt>();
+            // Gunakan Pan Tilt component dari active camera
+            var panTilt = activeCamera.GetComponent<CinemachinePanTilt>();
             if (panTilt != null)
             {
                 ApplyPanTiltOffset(panTilt, cameraRelativeOffset);
             }
         }
 
+        /// <summary>
+        /// Mendapatkan camera yang sedang aktif dari array cameras
+        /// </summary>
+        private CinemachineCamera GetActiveCamera()
+        {
+            if (cinemachineCameras == null || cinemachineCameras.Length == 0)
+                return null;
+
+            // Cari camera yang sedang aktif (enabled dan priority tertinggi)
+            CinemachineCamera activeCamera = null;
+            int highestPriority = int.MinValue;
+
+            foreach (var camera in cinemachineCameras)
+            {
+                if (camera != null && camera.gameObject.activeInHierarchy && camera.enabled)
+                {
+                    if (camera.Priority > highestPriority)
+                    {
+                        highestPriority = camera.Priority;
+                        activeCamera = camera;
+                    }
+                }
+            }
+
+            return activeCamera;
+        }
+
+        /// <summary>
+        /// Update default pan/tilt values ketika camera aktif berubah
+        /// </summary>
+        private void UpdateDefaultPanTilt(CinemachineCamera camera)
+        {
+            if (camera != null)
+            {
+                var panTilt = camera.GetComponent<CinemachinePanTilt>();
+                if (panTilt != null)
+                {
+                    defaultPanTilt = new Vector2(panTilt.PanAxis.Value, panTilt.TiltAxis.Value);
+                    Debug.Log($"Updated default pan/tilt for camera: {camera.name} - Pan: {defaultPanTilt.x}, Tilt: {defaultPanTilt.y}");
+                }
+            }
+        }
+
         private Vector3 ConvertToCameraSpace(Vector3 aimOffset)
         {
-            if (playerTransform == null || cinemachineCamera == null)
+            if (playerTransform == null)
+                return aimOffset;
+
+            CinemachineCamera activeCamera = GetActiveCamera();
+            if (activeCamera == null)
                 return aimOffset;
 
             // Cara sederhana: gunakan transform direction
             // Konversi dari player local space ke world space, lalu ke camera space
             Vector3 worldOffset = playerTransform.TransformDirection(aimOffset);
-            Vector3 cameraLocalOffset = cinemachineCamera.transform.InverseTransformDirection(worldOffset);
+            Vector3 cameraLocalOffset = activeCamera.transform.InverseTransformDirection(worldOffset);
             
             // Untuk pan/tilt, kita hanya butuh X (pan) dan Y (tilt)
             return new Vector3(cameraLocalOffset.x, cameraLocalOffset.y, 0f);
@@ -216,9 +288,10 @@ namespace DS
         // Method untuk reset posisi kamera ke default secara manual
         public void ResetCameraToDefault()
         {
-            if (cinemachineCamera != null)
+            CinemachineCamera activeCamera = GetActiveCamera();
+            if (activeCamera != null)
             {
-                var panTilt = cinemachineCamera.GetComponent<CinemachinePanTilt>();
+                var panTilt = activeCamera.GetComponent<CinemachinePanTilt>();
                 if (panTilt != null)
                 {
                     panTilt.PanAxis.Value = defaultPanTilt.x;
@@ -231,6 +304,102 @@ namespace DS
         public void SetPlayerTransform(Transform player)
         {
             playerTransform = player;
+        }
+
+        // Method untuk menambah camera ke array
+        public void AddCamera(CinemachineCamera camera)
+        {
+            if (camera == null) return;
+
+            // Cek apakah camera sudah ada dalam array
+            if (cinemachineCameras != null)
+            {
+                foreach (var existingCamera in cinemachineCameras)
+                {
+                    if (existingCamera == camera) return; // Sudah ada
+                }
+            }
+
+            // Tambahkan camera ke array
+            if (cinemachineCameras == null)
+            {
+                cinemachineCameras = new CinemachineCamera[] { camera };
+            }
+            else
+            {
+                CinemachineCamera[] newArray = new CinemachineCamera[cinemachineCameras.Length + 1];
+                cinemachineCameras.CopyTo(newArray, 0);
+                newArray[cinemachineCameras.Length] = camera;
+                cinemachineCameras = newArray;
+            }
+
+            Debug.Log($"Added camera {camera.name} to FlashlightCameraFollow");
+        }
+
+        // Method untuk menghapus camera dari array
+        public void RemoveCamera(CinemachineCamera camera)
+        {
+            if (camera == null || cinemachineCameras == null) return;
+
+            // Cari index camera
+            int indexToRemove = -1;
+            for (int i = 0; i < cinemachineCameras.Length; i++)
+            {
+                if (cinemachineCameras[i] == camera)
+                {
+                    indexToRemove = i;
+                    break;
+                }
+            }
+
+            if (indexToRemove == -1) return; // Camera tidak ditemukan
+
+            // Buat array baru tanpa camera tersebut
+            CinemachineCamera[] newArray = new CinemachineCamera[cinemachineCameras.Length - 1];
+            int newIndex = 0;
+            for (int i = 0; i < cinemachineCameras.Length; i++)
+            {
+                if (i != indexToRemove)
+                {
+                    newArray[newIndex] = cinemachineCameras[i];
+                    newIndex++;
+                }
+            }
+
+            cinemachineCameras = newArray;
+            Debug.Log($"Removed camera {camera.name} from FlashlightCameraFollow");
+        }
+
+        // Method untuk mendapatkan camera yang sedang aktif (public)
+        public CinemachineCamera GetCurrentActiveCamera()
+        {
+            return GetActiveCamera();
+        }
+
+        // Method untuk set cameras array secara langsung
+        public void SetCameras(CinemachineCamera[] cameras)
+        {
+            cinemachineCameras = cameras;
+            InitializeAllCameras();
+        }
+
+        // Method untuk reset semua cameras ke posisi default
+        public void ResetAllCamerasToDefault()
+        {
+            if (cinemachineCameras == null) return;
+
+            foreach (var camera in cinemachineCameras)
+            {
+                if (camera != null)
+                {
+                    var panTilt = camera.GetComponent<CinemachinePanTilt>();
+                    if (panTilt != null)
+                    {
+                        panTilt.PanAxis.Value = 0f;
+                        panTilt.TiltAxis.Value = 0f;
+                    }
+                }
+            }
         }
     }
 }
