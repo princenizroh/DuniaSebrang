@@ -69,10 +69,10 @@ namespace DS
             Vector2 input = new Vector2(xInput, yInput);
             
             // Debug input untuk memastikan input terdeteksi
-            if (input.magnitude > 0.01f)
-            {
-                Debug.Log($"Flashlight Input: {input}, Player Forward: {transform.forward}");
-            }
+            // if (input.magnitude > 0.01f)
+            // {
+            //     Debug.Log($"Flashlight Input: {input}, Player Forward: {transform.forward}");
+            // }
             
             // Sistem dengan deteksi arah hadap player
             if (input.magnitude > 0.01f)
@@ -85,7 +85,7 @@ namespace DS
                 if (playerForward.z < -0.5f) // Threshold untuk mendeteksi hadap kamera
                 {
                     adjustedXInput = -input.x; // Balik input horizontal untuk hadap kamera
-                    Debug.Log($"Player facing camera - Input X flipped: {input.x} -> {adjustedXInput}");
+                    // Debug.Log($"Player facing camera - Input X flipped: {input.x} -> {adjustedXInput}");
                 }
                 
                 // Langsung gunakan input yang sudah disesuaikan untuk update targetOffset
@@ -105,10 +105,10 @@ namespace DS
             aimOffset = Vector3.Lerp(aimOffset, targetOffset, Time.deltaTime * 10f);
 
             // Debug targetOffset untuk troubleshooting
-            if (Mathf.Abs(targetOffset.x) > 0.01f || Mathf.Abs(targetOffset.y) > 0.01f)
-            {
-                Debug.Log($"Flashlight TargetOffset: {targetOffset}, AimOffset: {aimOffset}");
-            }
+            // if (Mathf.Abs(targetOffset.x) > 0.01f || Mathf.Abs(targetOffset.y) > 0.01f)
+            // {
+            //     Debug.Log($"Flashlight TargetOffset: {targetOffset}, AimOffset: {aimOffset}");
+            // }
 
             // Tetap di depan karakter
             aimTarget.localPosition = new Vector3(aimOffset.x, aimOffset.y + 1f, fixedZ);

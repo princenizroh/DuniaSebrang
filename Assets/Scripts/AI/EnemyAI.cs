@@ -4,11 +4,15 @@ using UnityEngine.AI;
 
 namespace DS
 {
-    public enum MoveMode 
+    public enum MoveMode
     {
         patrol,
         chase,
-        wait
+        wait,
+        dying,
+        attack,
+        chargeSearch,
+        charge
     }
     public class EnemyAI : MonoBehaviour
     {

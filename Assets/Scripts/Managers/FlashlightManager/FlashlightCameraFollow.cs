@@ -47,11 +47,7 @@ namespace DS
                 if (camera != null)
                 {
                     var panTilt = camera.GetComponent<CinemachinePanTilt>();
-                    if (panTilt != null)
-                    {
-                        Debug.Log($"Initialized Pan Tilt for camera: {camera.name}");
-                    }
-                    else
+                    if (panTilt == null)
                     {
                         Debug.LogWarning($"No Pan Tilt component found on camera: {camera.name}. Please set Rotation Control to 'Pan Tilt' in Cinemachine Camera.");
                     }
@@ -87,10 +83,10 @@ namespace DS
             Vector3 aimOffset = flashlightManager.GetAimOffset();
             
             // Debug untuk melihat nilai aimOffset dan currentEffectStrength
-            if (Mathf.Abs(aimOffset.x) > 0.01f || Mathf.Abs(aimOffset.y) > 0.01f)
-            {
-                Debug.Log($"Camera - AimOffset: {aimOffset}, EffectStrength: {currentEffectStrength}");
-            }
+            // if (Mathf.Abs(aimOffset.x) > 0.01f || Mathf.Abs(aimOffset.y) > 0.01f)
+            // {
+            //     Debug.Log($"Camera - AimOffset: {aimOffset}, EffectStrength: {currentEffectStrength}");
+            // }
             
             // Jika FlashlightManager menggunakan world space aiming, tidak perlu konversi lagi
             Vector3 cameraRelativeOffset = aimOffset;
@@ -141,7 +137,7 @@ namespace DS
                 if (panTilt != null)
                 {
                     defaultPanTilt = new Vector2(panTilt.PanAxis.Value, panTilt.TiltAxis.Value);
-                    Debug.Log($"Updated default pan/tilt for camera: {camera.name} - Pan: {defaultPanTilt.x}, Tilt: {defaultPanTilt.y}");
+                    // Debug.Log($"Updated default pan/tilt for camera: {camera.name} - Pan: {defaultPanTilt.x}, Tilt: {defaultPanTilt.y}");
                 }
             }
         }
@@ -333,7 +329,6 @@ namespace DS
                 cinemachineCameras = newArray;
             }
 
-            Debug.Log($"Added camera {camera.name} to FlashlightCameraFollow");
         }
 
         // Method untuk menghapus camera dari array
@@ -367,7 +362,6 @@ namespace DS
             }
 
             cinemachineCameras = newArray;
-            Debug.Log($"Removed camera {camera.name} from FlashlightCameraFollow");
         }
 
         // Method untuk mendapatkan camera yang sedang aktif (public)
