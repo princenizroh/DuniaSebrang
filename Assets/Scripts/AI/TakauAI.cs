@@ -13,7 +13,6 @@ namespace DS
         [field: SerializeField] public float chaseSpeed { get; private set; } = 5f;
         [field: SerializeField] public float maxTimeChasing { get; private set; } = 5f;
         [field: SerializeField] public float maxTimeWaiting { get; private set; } = 3f;
-        [field: SerializeField] public float radiusHit { get; private set; } = 1.5f;
         
         [field: Header("=== ACCELERATION SETTINGS ===")]
         [Tooltip("Kecepatan awal saat mulai chase (akan naik ke chaseSpeed)")]
@@ -28,6 +27,8 @@ namespace DS
         [field: Header("=== CHASE BEHAVIOR ===")]
         [field: SerializeField] public float loseTargetDistance { get; private set; } = 15f;
         [field: SerializeField] public float minChaseDistance { get; private set; } = 5f;
+        [Tooltip("Minimum distance untuk chase detection - mencegah overlap dengan attack")]
+        [field: SerializeField] public float minChaseDetectionDistance { get; private set; } = 6f;
         [field: SerializeField] public bool showChaseDebug { get; private set; } = true;
         
         [field: Header("=== CHARGE SYSTEM ===")]
@@ -46,6 +47,18 @@ namespace DS
         [Tooltip("Runtime value - akan berubah selama charge search")]
         [field: SerializeField] private float currentChargeSearchVisionBonus;
 
+        [field: Header("=== ATTACK SYSTEM ===")]
+        [Tooltip("Range dimana Takau bisa menyerang player")]
+        [field: SerializeField] public float attackRange { get; private set; } = 3f;
+        [Tooltip("Angle untuk attack - player harus di depan Takau")]
+        [field: SerializeField] public float attackAngle { get; private set; } = 45f;
+        [Tooltip("Bonus range untuk attack jika player di forward vision")]
+        [field: SerializeField] public float attackForwardBonus { get; private set; } = 2f;
+        [Tooltip("Cooldown attack dalam detik")]
+        [field: SerializeField] public float attackCooldown { get; private set; } = 2f;
+        [Tooltip("Durasi attack animation")]
+        [field: SerializeField] public float attackDuration { get; private set; } = 1.5f;
+
         [field: Header("=== ROTATION SETTINGS ===")]
         [field: SerializeField] public float rotationSpeed { get; private set; } = 120f;
         [field: SerializeField] public bool useCustomRotation { get; private set; } = true;
@@ -57,7 +70,6 @@ namespace DS
 
         [field: Header("=== FIELD OF VIEW ===")]
         [field: SerializeField] public float viewRadius { get; private set; } = 7f;
-        [field: SerializeField] public float viewAngle { get; private set; } = 130;
         [Tooltip("Bonus range untuk forward vision cone")]
         [field: SerializeField] public float forwardVisionBonus { get; private set; } = 7f;
         [field: SerializeField] public float forwardVisionAngle { get; private set; } = 60f;
@@ -71,11 +83,14 @@ namespace DS
         [field: SerializeField] private float currentChargeSearchTime, lastChargeTime;
         [field: SerializeField] private Vector3 chargeTargetPosition;
         [field: SerializeField] private bool isCharging;
-        
-        // Acceleration runtime variables
         [field: SerializeField] private float currentChaseAccelTime;
         [field: SerializeField] private float currentChargeAccelTime;
         [field: SerializeField] private float currentEffectiveSpeed;
+        
+        // === ATTACK TRACKING ===
+        [field: SerializeField] private float lastAttackTime;
+        [field: SerializeField] private float currentAttackTime;
+        [field: SerializeField] private bool isAttacking;
 
         private void Awake()
         {
@@ -89,7 +104,6 @@ namespace DS
             if (agent.stoppingDistance < 0.5f)
                 agent.stoppingDistance = 0.5f;
 
-            // Set NavMeshAgent acceleration untuk smooth movement
             agent.acceleration = 15f; // Default acceleration untuk NavMeshAgent
             
             if (useCustomRotation)
@@ -147,6 +161,10 @@ namespace DS
                     ChargeSearching();
                     animator.Play("Roaming");
                     break;
+                case MoveMode.attack:
+                    Attacking();
+                    animator.Play("Swiping");
+                    break;
             }
 
             FieldOfView();
@@ -186,13 +204,30 @@ namespace DS
                 return;
             }
             
-            if (distanceToTarget <= radiusHit) // Jika sangat dekat dengan target (hit detection)
+            if (distanceToTarget <= attackRange) // Jika sangat dekat dengan target (attack range)
             {
                 if (!isHit)
                 {
-                    Debug.Log("Takau caught the player - Game Over!");
-                    isHit = true;
-                    OnPlayerCaught(); // Trigger game over logic atau damage player
+                    Debug.Log("Takau reached attack range - Initiating Attack!");
+                    
+                    // Check if attack conditions are met
+                    if (CheckAttackConditions())
+                    {
+                        // Switch to attack mode instead of immediate game over
+                        float timeSinceLastAttack = Time.time - lastAttackTime;
+                        if (timeSinceLastAttack >= attackCooldown)
+                        {
+                            SwitchMoveMode(MoveMode.attack);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        // Too close but not in attack angle - game over (caught)
+                        Debug.Log("Takau caught the player - Game Over!");
+                        isHit = true;
+                        OnPlayerCaught();
+                    }
                 }
                 return;
             }
@@ -351,7 +386,7 @@ namespace DS
             if (currentTarget != null)
             {
                 float distanceToPlayer = Vector3.Distance(transform.position, currentTarget.position);
-                if (distanceToPlayer <= radiusHit && !isHit)
+                if (distanceToPlayer <= attackRange && !isHit)
                 {
                     Debug.Log("Takau hit player during charge - Game Over!");
                     isHit = true;
@@ -457,6 +492,10 @@ namespace DS
                 case MoveMode.charge:
                     if (showChaseDebug) Debug.Log("Takau: Exiting charge mode");
                     break;
+                case MoveMode.attack:
+                    if (showChaseDebug) Debug.Log("Takau: Exiting attack mode");
+                    isAttacking = false;
+                    break;
             }
             
             // Enter new mode
@@ -496,6 +535,16 @@ namespace DS
                     agent.acceleration = 20f; // Start with high acceleration for explosive feel
                     agent.isStopped = false;
                     if (showChaseDebug) Debug.Log("Takau: Entering Charge Mode - CHARGING!");
+                    break;
+                case MoveMode.attack:
+                    agent.destination = transform.position;
+                    currentAttackTime = 0; // Reset attack timer
+                    currentEffectiveSpeed = 0; // No movement during attack
+                    agent.speed = 0;
+                    agent.acceleration = 15f; // Default acceleration
+                    agent.isStopped = false;
+                    isAttacking = true;
+                    if (showChaseDebug) Debug.Log("Takau: Entering Attack Mode - ATTACKING PLAYER!");
                     break;
             }
             
@@ -567,7 +616,31 @@ namespace DS
                 float angleToTarget = Vector3.Angle(transform.forward, direction);
                 float distance = Vector3.Distance(transform.position, currentTarget.position);
 
-                // Check charge detection first (higher priority)
+                // === ATTACK DETECTION (HIGHEST PRIORITY) ===
+                // Check attack conditions first - if player is close and in front of Takau
+                float timeSinceLastAttack = Time.time - lastAttackTime;
+                bool attackReady = timeSinceLastAttack >= attackCooldown;
+                
+                if (moveMode != MoveMode.charge && moveMode != MoveMode.attack && attackReady)
+                {
+                    if (CheckAttackConditions())
+                    {
+                        if (showChaseDebug) 
+                        {
+                            Debug.Log($"★★★ ATTACK CONDITIONS MET! Distance={distance:F1}m, Angle={angleToTarget:F1}° - ATTACKING PLAYER! ★★★");
+                        }
+                        
+                        // Initiate attack
+                        lastAttackTime = Time.time;
+                        currentAttackTime = 0;
+                        isAttacking = true;
+                        SwitchMoveMode(MoveMode.attack);
+                        isDetectTarget = false; // Disable normal detection during attack
+                        return;
+                    }
+                }
+
+                // Check charge detection second (lower priority than attack)
                 float timeSinceLastCharge = Time.time - lastChargeTime;
                 bool chargeReady = timeSinceLastCharge >= chargeCooldown;
                 
@@ -638,57 +711,52 @@ namespace DS
                     }
                 }
 
-                bool isInFOV = false;
-                float effectiveViewRadius = viewRadius;
-                
-                // Normal chase detection (not during charge modes)
-                if (moveMode != MoveMode.charge)
+                // === NORMAL CHASE DETECTION (with minimum distance to prevent attack overlap) ===
+                if (moveMode != MoveMode.charge && moveMode != MoveMode.attack)
                 {
-                    // Check if target is in forward extended vision cone (for chase)
-                    if (angleToTarget < forwardVisionAngle / 2)
+                    // Only use FORWARD VISION for chase detection (remove dual vision system)
+                    bool inForwardVision = angleToTarget < forwardVisionAngle / 2;
+                    bool inChaseRange = distance >= minChaseDetectionDistance && distance <= (viewRadius + forwardVisionBonus);
+                    bool lineOfSight = !Physics.Raycast(transform.position, direction, distance, ObstacleMask, QueryTriggerInteraction.Ignore);
+                    
+                    if (showChaseDebug && inForwardVision) 
                     {
-                        effectiveViewRadius = extendedRadius;
-                        isInFOV = true;
-                        if (showChaseDebug) Debug.Log($"FOV: Target in EXTENDED forward vision (angle: {angleToTarget:F1}°, dist: {distance:F1}m)");
-                    }
-                    else if (angleToTarget < viewAngle / 2)
-                    {
-                        effectiveViewRadius = viewRadius;
-                        isInFOV = (distance <= viewRadius);
-                        if (showChaseDebug) Debug.Log($"FOV: Target in normal vision (angle: {angleToTarget:F1}°, dist: {distance:F1}m)");
+                        Debug.Log($"CHASE CHECK: Angle={angleToTarget:F1}°/{forwardVisionAngle/2:F1}°, Distance={distance:F1}m, Range={minChaseDetectionDistance:F1}m-{viewRadius + forwardVisionBonus:F1}m, InRange={inChaseRange}, LOS={lineOfSight}");
                     }
                     
-                    // Process detection for chase modes
-                    if (isInFOV && distance <= effectiveViewRadius) {
-                        
-                        if(!Physics.Raycast(transform.position, direction, distance, ObstacleMask, QueryTriggerInteraction.Ignore)) {
-                            isDetectTarget = true;
+                    if (inForwardVision && inChaseRange && lineOfSight) 
+                    {
+                        isDetectTarget = true;
 
-                            if(moveMode == MoveMode.wait) {
-                                if (showChaseDebug) Debug.Log($"FOV: Target detected in wait mode at {distance:F1}m - let Waiting() handle it");
-                            }
-                            else if(moveMode == MoveMode.chase) {
-                                // Already in chase, continue
-                            }
-                            else if(moveMode == MoveMode.chargeSearch) {
-                                // During charge search, normal vision detection is secondary to charge detection
-                                if (showChaseDebug) Debug.Log($"FOV: Target detected during charge search - continue search or switch to chase");
-                            }
-                            else {
-                                if (showChaseDebug) Debug.Log($"FOV: Target detected at {distance:F1}m, switching to chase");
-                                SwitchMoveMode(MoveMode.chase);
-                            }
-                        } else {
-                            isDetectTarget = false;
-                            if (showChaseDebug && range.Length > 0) Debug.Log("FOV: Target blocked by obstacle");
+                        if(moveMode == MoveMode.wait) {
+                            if (showChaseDebug) Debug.Log($"CHASE: Target detected in wait mode at {distance:F1}m - let Waiting() handle it");
                         }
-                    } else {
+                        else if(moveMode == MoveMode.chase) {
+                            // Already in chase, continue
+                        }
+                        else if(moveMode == MoveMode.chargeSearch) {
+                            // During charge search, normal vision detection is secondary to charge detection
+                            if (showChaseDebug) Debug.Log($"CHASE: Target detected during charge search - continue search or switch to chase");
+                        }
+                        else {
+                            if (showChaseDebug) Debug.Log($"CHASE: Target detected at {distance:F1}m, switching to chase");
+                            SwitchMoveMode(MoveMode.chase);
+                        }
+                    } 
+                    else 
+                    {
                         isDetectTarget = false;
                         if (showChaseDebug && range.Length > 0) {
-                            if (!isInFOV) {
-                                Debug.Log($"FOV: Target outside view angle ({angleToTarget:F1}° > {viewAngle/2:F1}°)");
+                            if (!inForwardVision) {
+                                Debug.Log($"CHASE: Target outside forward vision angle ({angleToTarget:F1}° > {forwardVisionAngle/2:F1}°)");
+                            } else if (!inChaseRange) {
+                                if (distance < minChaseDetectionDistance) {
+                                    Debug.Log($"CHASE: Target too close for chase ({distance:F1}m < {minChaseDetectionDistance:F1}m) - attack range");
+                                } else {
+                                    Debug.Log($"CHASE: Target too far ({distance:F1}m > {viewRadius + forwardVisionBonus:F1}m)");
+                                }
                             } else {
-                                Debug.Log($"FOV: Target too far ({distance:F1}m > {effectiveViewRadius:F1}m)");
+                                Debug.Log("CHASE: Target blocked by obstacle");
                             }
                         }
                     }
@@ -720,9 +788,9 @@ namespace DS
             Gizmos.color = isDetectTarget ? new Color(0f, 1f, 0f, 0.3f) : new Color(0f, 0f, 1f, 0.3f);
             Gizmos.DrawWireSphere(transform.position, viewRadius + forwardVisionBonus);
             
-            // Hit radius (game over zone)
+            // Hit radius (attack range visualization)
             Gizmos.color = isHit ? Color.red : Color.magenta;
-            Gizmos.DrawWireSphere(transform.position, radiusHit);
+            Gizmos.DrawWireSphere(transform.position, attackRange);
             
             // Chase lose distance
             Gizmos.color = Color.cyan;
@@ -731,6 +799,39 @@ namespace DS
             // Min chase distance
             Gizmos.color = new Color(1f, 0.5f, 0f); // Orange color
             Gizmos.DrawWireSphere(transform.position, minChaseDistance);
+            
+            // Min chase DETECTION distance (prevents attack/chase overlap)
+            Gizmos.color = new Color(0f, 1f, 1f, 0.5f); // Cyan color for detection minimum
+            Gizmos.DrawWireSphere(transform.position, minChaseDetectionDistance);
+            
+            // === ATTACK RANGE VISUALIZATION ===
+            // Normal attack range
+            Gizmos.color = moveMode == MoveMode.attack ? Color.red : new Color(1f, 0f, 0f, 0.3f);
+            Gizmos.DrawWireSphere(transform.position, attackRange);
+            
+            // Extended attack range (with forward bonus)
+            Gizmos.color = moveMode == MoveMode.attack ? new Color(1f, 0.5f, 0.5f) : new Color(1f, 0f, 0f, 0.2f);
+            Gizmos.DrawWireSphere(transform.position, attackRange + attackForwardBonus);
+            
+            // Attack vision cone
+            float halfAttackAngle = attackAngle / 2f;
+            Quaternion leftAttackRotation = Quaternion.AngleAxis(-halfAttackAngle, Vector3.up);
+            Quaternion rightAttackRotation = Quaternion.AngleAxis(halfAttackAngle, Vector3.up);
+            Vector3 leftAttackDirection = leftAttackRotation * transform.forward;
+            Vector3 rightAttackDirection = rightAttackRotation * transform.forward;
+            
+            Gizmos.color = moveMode == MoveMode.attack ? Color.red : new Color(1f, 0f, 0f, 0.4f);
+            Gizmos.DrawRay(transform.position, leftAttackDirection * (attackRange + attackForwardBonus));
+            Gizmos.DrawRay(transform.position, rightAttackDirection * (attackRange + attackForwardBonus));
+            
+            #if UNITY_EDITOR
+            // Attack range labels
+            Vector3 attackRangeLabel = transform.position + transform.forward * attackRange;
+            UnityEditor.Handles.Label(attackRangeLabel, $"Attack: {attackRange:F1}m");
+            
+            Vector3 attackExtendedLabel = transform.position + transform.forward * (attackRange + attackForwardBonus);
+            UnityEditor.Handles.Label(attackExtendedLabel, $"Attack+: {attackRange + attackForwardBonus:F1}m");
+            #endif
 
             // Line to target with different colors based on mode
             if(currentTarget != null && isDetectTarget)
@@ -742,6 +843,9 @@ namespace DS
                         break;
                     case MoveMode.wait:
                         Gizmos.color = Color.yellow;
+                        break;
+                    case MoveMode.attack:
+                        Gizmos.color = Color.magenta;
                         break;
                     default:
                         Gizmos.color = Color.green;
@@ -758,38 +862,26 @@ namespace DS
                 #endif
             }
 
-            // Normal Field of view visualization (CHASE VISION)
-            float halfFov = viewAngle / 2f;
-            Quaternion leftRayRotation = Quaternion.AngleAxis(-halfFov, Vector3.up);
-            Quaternion rightRayRotation = Quaternion.AngleAxis(halfFov, Vector3.up);
-            Vector3 leftRayDirection = leftRayRotation * transform.forward;
-            Vector3 rightRayDirection = rightRayRotation * transform.forward;
-            
-            Gizmos.color = isDetectTarget ? Color.red : Color.white;
-            Gizmos.DrawRay(transform.position, leftRayDirection * viewRadius);
-            Gizmos.DrawRay(transform.position, rightRayDirection * viewRadius);
-            
-            #if UNITY_EDITOR
-            // Label for normal vision
-            Vector3 normalVisionLabel = transform.position + transform.forward * viewRadius;
-            UnityEditor.Handles.Label(normalVisionLabel, $"Normal Vision: {viewRadius:F1}m / {viewAngle}°");
-            #endif
-            
-            // Extended forward vision cone (CHASE EXTENDED VISION)
+            // === SIMPLIFIED VISION SYSTEM (Forward Vision Only) ===
+            // Forward vision cone for CHASE (primary detection)
             float halfForwardFov = forwardVisionAngle / 2f;
             Quaternion leftForwardRotation = Quaternion.AngleAxis(-halfForwardFov, Vector3.up);
             Quaternion rightForwardRotation = Quaternion.AngleAxis(halfForwardFov, Vector3.up);
             Vector3 leftForwardDirection = leftForwardRotation * transform.forward;
             Vector3 rightForwardDirection = rightForwardRotation * transform.forward;
             
-            Gizmos.color = isDetectTarget ? new Color(1f, 0f, 0f, 0.7f) : new Color(1f, 1f, 1f, 0.7f);
+            Gizmos.color = isDetectTarget ? new Color(0f, 1f, 0f, 0.8f) : new Color(0f, 0f, 1f, 0.6f);
             Gizmos.DrawRay(transform.position, leftForwardDirection * (viewRadius + forwardVisionBonus));
             Gizmos.DrawRay(transform.position, rightForwardDirection * (viewRadius + forwardVisionBonus));
             
             #if UNITY_EDITOR
-            // Label for extended chase vision
-            Vector3 extendedVisionLabel = transform.position + transform.forward * (viewRadius + forwardVisionBonus);
-            UnityEditor.Handles.Label(extendedVisionLabel, $"Extended Chase: {viewRadius + forwardVisionBonus:F1}m / {forwardVisionAngle}°");
+            // Label for chase vision system
+            Vector3 chaseVisionLabel = transform.position + transform.forward * (viewRadius + forwardVisionBonus);
+            UnityEditor.Handles.Label(chaseVisionLabel, $"Chase Vision: {viewRadius + forwardVisionBonus:F1}m / {forwardVisionAngle}°");
+            
+            // Show minimum chase detection distance
+            Vector3 minChaseLabel = transform.position + transform.forward * minChaseDetectionDistance;
+            UnityEditor.Handles.Label(minChaseLabel, $"Min Chase: {minChaseDetectionDistance:F1}m");
             #endif
             
             // Charge vision cone (always visible for debugging)
@@ -1067,21 +1159,29 @@ namespace DS
             GUILayout.Label("=== PARAMETERS DEBUG ===");
             GUILayout.Label($"viewRadius: {viewRadius:F1}m");
             GUILayout.Label($"forwardVisionBonus: {forwardVisionBonus:F1}m");
+            GUILayout.Label($"forwardVisionAngle: {forwardVisionAngle:F1}°");
+            GUILayout.Label($"minChaseDetectionDistance: {minChaseDetectionDistance:F1}m");
             GUILayout.Label($"chargeForwardVisionBonus: {chargeForwardVisionBonus:F1}m");
             GUILayout.Label($"currentChargeSearchVisionBonus: {currentChargeSearchVisionBonus:F1}m");
             GUILayout.Label($"chargeSearchVisionBonusStart: {chargeSearchVisionBonusStart:F1}m");
             GUILayout.Label($"chargeSearchVisionBonusMax: {chargeSearchVisionBonusMax:F1}m");
+            GUILayout.Label($"attackRange: {attackRange:F1}m");
+            GUILayout.Label($"attackAngle: {attackAngle:F1}°");
+            GUILayout.Label($"attackForwardBonus: {attackForwardBonus:F1}m");
             
             // CALCULATED RANGES
-            float calculatedExtended = viewRadius + forwardVisionBonus;
+            float calculatedChaseRange = viewRadius + forwardVisionBonus;
             float calculatedCharge = viewRadius + chargeForwardVisionBonus;
             float calculatedChargeSearch = viewRadius + currentChargeSearchVisionBonus;
+            float calculatedAttack = attackRange;
+            float calculatedAttackExtended = attackRange + attackForwardBonus;
             
             GUILayout.Label("=== CALCULATED RANGES ===");
-            GUILayout.Label($"Normal: {viewRadius:F1}m");
-            GUILayout.Label($"Chase Extended: {calculatedExtended:F1}m ({viewRadius:F1} + {forwardVisionBonus:F1})");
+            GUILayout.Label($"Chase: {minChaseDetectionDistance:F1}m - {calculatedChaseRange:F1}m (Forward Vision Only)");
             GUILayout.Label($"Charge: {calculatedCharge:F1}m ({viewRadius:F1} + {chargeForwardVisionBonus:F1})");
             GUILayout.Label($"ChargeSearch: {calculatedChargeSearch:F1}m ({viewRadius:F1} + {currentChargeSearchVisionBonus:F1})");
+            GUILayout.Label($"Attack: {calculatedAttack:F1}m");
+            GUILayout.Label($"Attack Extended: {calculatedAttackExtended:F1}m ({attackRange:F1} + {attackForwardBonus:F1})");
             
             if (currentTarget != null)
             {
@@ -1092,21 +1192,44 @@ namespace DS
                 float angle = Vector3.Angle(transform.forward, direction);
                 GUILayout.Label($"Angle to Target: {angle:F1}°");
                 
-                // FOV Check details
-                bool inNormalFOV = angle < viewAngle / 2;
-                bool inExtendedFOV = angle < forwardVisionAngle / 2;
-                GUILayout.Label($"In Normal FOV ({viewAngle}°): {inNormalFOV}");
-                GUILayout.Label($"In Extended FOV ({forwardVisionAngle}°): {inExtendedFOV}");
+                // FOV Check details (simplified to forward vision only)
+                bool inForwardVision = angle < forwardVisionAngle / 2;
+                bool inAttackFOV = angle < attackAngle / 2;
+                GUILayout.Label($"In Forward Vision ({forwardVisionAngle}°): {inForwardVision}");
+                GUILayout.Label($"In Attack FOV ({attackAngle}°): {inAttackFOV}");
                 
-                // Vision range info
-                float effectiveRange = inExtendedFOV ? viewRadius + forwardVisionBonus : viewRadius;
-                GUILayout.Label($"Effective Range: {effectiveRange:F1}m");
-                GUILayout.Label($"Normal Range: {viewRadius:F1}m");
-                GUILayout.Label($"Extended Range: {viewRadius + forwardVisionBonus:F1}m");
+                // Range checks
+                bool inChaseRange = dist >= minChaseDetectionDistance && dist <= calculatedChaseRange;
+                float effectiveAttackRange = inForwardVision ? attackRange + attackForwardBonus : attackRange;
+                bool inAttackRange = dist <= effectiveAttackRange;
+                
+                GUILayout.Label($"Chase Range: {(inChaseRange ? "YES" : "NO")} ({minChaseDetectionDistance:F1}m-{calculatedChaseRange:F1}m)");
+                GUILayout.Label($"Attack Range: {(inAttackRange ? "YES" : "NO")} ({effectiveAttackRange:F1}m {(inForwardVision ? "EXTENDED" : "NORMAL")})");
+                
+                // Range zone identification
+                string currentZone = "UNKNOWN";
+                if (dist <= attackRange) currentZone = "ATTACK ZONE";
+                else if (dist <= effectiveAttackRange && inAttackFOV) currentZone = "ATTACK EXTENDED";
+                else if (dist < minChaseDetectionDistance) currentZone = "TOO CLOSE (No Chase)";
+                else if (dist <= calculatedChaseRange && inForwardVision) currentZone = "CHASE ZONE";
+                else currentZone = "OUT OF RANGE";
+                
+                GUILayout.Label($"★ CURRENT ZONE: {currentZone} ★");
                 
                 // Obstacle check
                 bool blocked = Physics.Raycast(transform.position, direction, dist, ObstacleMask);
                 GUILayout.Label($"Line of Sight: {(blocked ? "BLOCKED" : "CLEAR")}");
+                
+                // === ATTACK STATUS ===
+                float timeSinceLastAttack = Time.time - lastAttackTime;
+                bool attackReady = timeSinceLastAttack >= attackCooldown;
+                bool attackConditions = CheckAttackConditions();
+                
+                GUILayout.Label($"=== ATTACK STATUS ===");
+                GUILayout.Label($"In Attack FOV ({attackAngle}°): {inAttackFOV}");
+                GUILayout.Label($"In Attack Range ({effectiveAttackRange:F1}m): {inAttackRange}");
+                GUILayout.Label($"Attack Ready: {(attackReady ? "YES" : $"NO ({attackCooldown - timeSinceLastAttack:F1}s)")}");
+                GUILayout.Label($"★ ATTACK CONDITIONS MET: {(attackConditions ? "YES - READY TO ATTACK!" : "NO")} ★");
                 
                 // Charge vision check with real-time status
                 bool inChargeFOV = angle < chargeForwardVisionAngle / 2;
@@ -1223,6 +1346,33 @@ namespace DS
                         GUILayout.Label($"Dist to Charge Target: {distToChargeTarget:F1}m");
                     }
                     break;
+                case MoveMode.attack:
+                    GUILayout.Label($"★★★ ATTACKING PLAYER! ★★★");
+                    GUILayout.Label($"Attack Time: {currentAttackTime:F1}s / {attackDuration:F1}s");
+                    float attackProgress = (currentAttackTime / attackDuration) * 100f;
+                    GUILayout.Label($"Attack Progress: {attackProgress:F0}%");
+                    
+                    float timeSinceLastAttack = Time.time - lastAttackTime;
+                    bool attackReadyAgain = timeSinceLastAttack >= attackCooldown;
+                    GUILayout.Label($"Attack Ready: {(attackReadyAgain ? "YES" : $"NO ({attackCooldown - timeSinceLastAttack:F1}s)")}");
+                    
+                    if (currentTarget != null)
+                    {
+                        bool attackConditions = CheckAttackConditions();
+                        GUILayout.Label($"Attack Conditions Met: {(attackConditions ? "YES" : "NO")}");
+                        
+                        float dist = Vector3.Distance(transform.position, currentTarget.position);
+                        Vector3 direction = (currentTarget.position - transform.position).normalized;
+                        float angle = Vector3.Angle(transform.forward, direction);
+                        bool inForwardVision = angle < forwardVisionAngle / 2;
+                        float effectiveAttackRange = inForwardVision ? attackRange + attackForwardBonus : attackRange;
+                        
+                        GUILayout.Label($"Distance: {dist:F1}m");
+                        GUILayout.Label($"Angle: {angle:F1}° / {attackAngle/2:F1}°");
+                        GUILayout.Label($"In Attack Range: {(dist <= effectiveAttackRange ? "YES" : "NO")}");
+                        GUILayout.Label($"Effective Range: {effectiveAttackRange:F1}m ({(inForwardVision ? "EXTENDED" : "NORMAL")})");
+                    }
+                    break;
             }
             
             GUILayout.EndArea();
@@ -1240,6 +1390,11 @@ namespace DS
                 direction = (currentTarget.position - transform.position).normalized;
             }
             else if (moveMode == MoveMode.chase)
+            {
+                if (currentTarget == null) return;
+                direction = (currentTarget.position - transform.position).normalized;
+            }
+            else if (moveMode == MoveMode.attack)
             {
                 if (currentTarget == null) return;
                 direction = (currentTarget.position - transform.position).normalized;
@@ -1274,6 +1429,10 @@ namespace DS
                 else if (moveMode == MoveMode.wait)
                 {
                     currentRotationSpeed = rotationSpeed * 0.8f; // Slower rotation when waiting (more cautious)
+                }
+                else if (moveMode == MoveMode.attack)
+                {
+                    currentRotationSpeed = rotationSpeed * 3f; // Very fast rotation when attacking to face target
                 }
                 else if (moveMode == MoveMode.charge)
                 {
@@ -1328,6 +1487,136 @@ namespace DS
         public float GetCorrectChargeRange()
         {
             return viewRadius + chargeForwardVisionBonus;
+        }
+
+        private void Attacking()
+        {
+            if (currentTarget == null)
+            {
+                if (showChaseDebug) Debug.Log("Takau: No target during attack, switching to wait");
+                SwitchMoveMode(MoveMode.wait);
+                return;
+            }
+            
+            // Stop movement during attack
+            agent.destination = transform.position;
+            agent.speed = 0;
+            
+            currentAttackTime += Time.deltaTime;
+            
+            if (showChaseDebug) 
+            {
+                Debug.Log($"Takau attacking! Time: {currentAttackTime:F1}s / {attackDuration:F1}s");
+            }
+            
+            // Attack finished
+            if (currentAttackTime >= attackDuration)
+            {
+                if (showChaseDebug) Debug.Log("Takau: Attack finished");
+                
+                // Execute attack effect
+                OnPlayerAttacked();
+                
+                // Check if player is still close for another attack or if we should chase
+                if (CheckAttackConditions())
+                {
+                    // Still in attack range, check cooldown
+                    float timeSinceLastAttack = Time.time - lastAttackTime;
+                    if (timeSinceLastAttack >= attackCooldown)
+                    {
+                        // Attack again
+                        if (showChaseDebug) Debug.Log("Takau: Continuous attack - player still in range!");
+                        lastAttackTime = Time.time;
+                        currentAttackTime = 0;
+                        return; // Stay in attack mode
+                    }
+                    else
+                    {
+                        // Wait for cooldown, but don't move away
+                        if (showChaseDebug) Debug.Log($"Takau: Attack on cooldown ({attackCooldown - timeSinceLastAttack:F1}s remaining)");
+                        return; // Stay in attack mode but don't attack yet
+                    }
+                }
+                else
+                {
+                    // Player moved away, return to chase or wait
+                    if (isDetectTarget && currentTarget != null)
+                    {
+                        if (showChaseDebug) Debug.Log("Takau: Player moved away from attack range, switching to chase");
+                        SwitchMoveMode(MoveMode.chase);
+                    }
+                    else
+                    {
+                        if (showChaseDebug) Debug.Log("Takau: Lost target after attack, switching to wait");
+                        SwitchMoveMode(MoveMode.wait);
+                    }
+                }
+            }
+        }
+        
+        private bool CheckAttackConditions()
+        {
+            if (currentTarget == null) return false;
+            
+            Vector3 direction = (currentTarget.position - transform.position).normalized;
+            float angleToTarget = Vector3.Angle(transform.forward, direction);
+            float distance = Vector3.Distance(transform.position, currentTarget.position);
+            
+            // Check if target is in front of Takau (within attack angle)
+            bool inAttackAngle = angleToTarget < attackAngle / 2;
+            
+            // Check range - use extended range if target is in forward vision
+            bool inForwardVision = angleToTarget < forwardVisionAngle / 2;
+            float effectiveAttackRange = inForwardVision ? attackRange + attackForwardBonus : attackRange;
+            bool inAttackRange = distance <= effectiveAttackRange;
+            
+            // Check line of sight
+            bool lineOfSight = !Physics.Raycast(transform.position, direction, distance, ObstacleMask, QueryTriggerInteraction.Ignore);
+            
+            if (showChaseDebug && inAttackAngle && inAttackRange)
+            {
+                string rangeType = inForwardVision ? "EXTENDED" : "NORMAL";
+                Debug.Log($"Attack check: Angle={angleToTarget:F1}°/{attackAngle/2:F1}°, Distance={distance:F1}m, Range={effectiveAttackRange:F1}m ({rangeType}), LOS={lineOfSight}");
+            }
+            
+            return inAttackAngle && inAttackRange && lineOfSight;
+        }
+
+        private void OnPlayerAttacked()
+        {
+            if (showChaseDebug) Debug.Log("Takau successfully attacked the player!");
+            
+            // Attack hit player
+            if (currentTarget != null)
+            {
+                float distanceToPlayer = Vector3.Distance(transform.position, currentTarget.position);
+                if (distanceToPlayer <= attackRange)
+                {
+                    // Direct hit - immediate game over
+                    if (showChaseDebug) Debug.Log("Takau DIRECT HIT - Game Over!");
+                    isHit = true;
+                    OnPlayerCaught();
+                }
+                else
+                {
+                    // Attack successful but not direct hit
+                    if (showChaseDebug) Debug.Log($"Takau attack successful! Distance: {distanceToPlayer:F1}m");
+                    
+                    // Bisa tambahkan:
+                    // - Damage player
+                    // - Knockback effect
+                    // - Screen shake
+                    // - Blood effect
+                    // - Player health reduction
+                    
+                    // Example damage logic (uncomment if you have player health system):
+                    // PlayerHealth playerHealth = currentTarget.GetComponent<PlayerHealth>();
+                    // if (playerHealth != null)
+                    // {
+                    //     playerHealth.TakeDamage(attackDamage);
+                    // }
+                }
+            }
         }
     }
 }
