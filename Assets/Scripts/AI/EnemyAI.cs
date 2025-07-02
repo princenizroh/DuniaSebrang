@@ -11,8 +11,8 @@ namespace DS
         wait,
         dying,
         attack,
-        chargeSearch,
-        charge
+        charge,
+        chargeSearch
     }
     public class EnemyAI : MonoBehaviour
     {
