@@ -4,47 +4,57 @@ namespace DS
 {
     public class TakauAI : MonoBehaviour
     {
+        [field: Header("=== AI MODE & ANIMATION ===")]
         [field: SerializeField] public MoveMode moveMode { get; private set; }
         private Animator animator;
         private Rigidbody rb;
 
-        [Header("Steering")]
+        [field: Header("=== BASIC MOVEMENT ===")]
         [field: SerializeField] public float chaseSpeed { get; private set; } = 5f;
-        [field: SerializeField] public float maxTimeChasing { get; private set; } = 8f;
+        [field: SerializeField] public float maxTimeChasing { get; private set; } = 5f;
         [field: SerializeField] public float maxTimeWaiting { get; private set; } = 3f;
         [field: SerializeField] public float radiusHit { get; private set; } = 1.5f;
         
-        [Header("Chase Behavior")]
+        [field: Header("=== CHASE BEHAVIOR ===")]
         [field: SerializeField] public float loseTargetDistance { get; private set; } = 15f;
-        [field: SerializeField] public float minChaseDistance { get; private set; } = 2f;
+        [field: SerializeField] public float minChaseDistance { get; private set; } = 5f;
         [field: SerializeField] public bool showChaseDebug { get; private set; } = true;
         
-        [Header("Charge System")]
-        [field: SerializeField] public float chargeSpeed { get; private set; } = 12f;
-        [field: SerializeField] public float chargeDistance { get; private set; } = 20f;
+        [field: Header("=== CHARGE SYSTEM ===")]
+        [field: SerializeField] public float chargeSpeed { get; private set; } = 50f;
         [field: SerializeField] public float chargeSearchTime { get; private set; } = 4f;
         [field: SerializeField] public float chargeCooldown { get; private set; } = 8f;
+        [field: SerializeField] public float chargeMinDistance { get; private set; } = 15f;
+        
+        [field: Header("=== CHARGE VISION SETTINGS ===")]
         [field: SerializeField] public float chargeForwardVisionAngle { get; private set; } = 30f;
-        [field: SerializeField] public float chargeForwardVisionBonus { get; private set; } = 8f;
-        [field: SerializeField] public float chargeMinDistance { get; private set; } = 5f;
+        [field: SerializeField] public float chargeForwardVisionBonus { get; private set; } = 18f;
+        [Tooltip("Vision bonus saat mulai charge search (akan berkembang ke Max)")]
+        [field: SerializeField] public float chargeSearchVisionBonusStart { get; private set; } = 18.5f;
+        [Tooltip("Vision bonus maksimum setelah 4 detik charge search")]
+        [field: SerializeField] public float chargeSearchVisionBonusMax { get; private set; } = 30f;
+        [Tooltip("Runtime value - akan berubah selama charge search")]
+        [field: SerializeField] private float currentChargeSearchVisionBonus;
 
-        [Header("Rotation Settings")]
+        [field: Header("=== ROTATION SETTINGS ===")]
         [field: SerializeField] public float rotationSpeed { get; private set; } = 120f;
         [field: SerializeField] public bool useCustomRotation { get; private set; } = true;
         [field: SerializeField] public float rotationSmoothness { get; private set; } = 0.1f;
 
-        [Header("Transform")]
+        [field: Header("=== NAVMESH & TARGET ===")]
         [field: SerializeField] public NavMeshAgent agent { get; private set; }
         [field: SerializeField] public Transform currentTarget { get; private set; }
 
-        [Header("Field of View")]
-        [field: SerializeField] public float viewRadius { get; private set; } = 12f;
-        [field: SerializeField] public float viewAngle { get; private set; } = 90f;
-        [field: SerializeField] public float forwardVisionBonus { get; private set; } = 5f;
-        [field: SerializeField] public float forwardVisionAngle { get; private set; } = 45f;
+        [field: Header("=== FIELD OF VIEW ===")]
+        [field: SerializeField] public float viewRadius { get; private set; } = 7f;
+        [field: SerializeField] public float viewAngle { get; private set; } = 130;
+        [Tooltip("Bonus range untuk forward vision cone")]
+        [field: SerializeField] public float forwardVisionBonus { get; private set; } = 7f;
+        [field: SerializeField] public float forwardVisionAngle { get; private set; } = 60f;
         [field: SerializeField] public LayerMask TargetMask { get; private set; }
         [field: SerializeField] public LayerMask ObstacleMask { get; private set; }
 
+        [field: Header("=== RUNTIME STATUS (READ ONLY) ===")]
         [field: SerializeField] public bool isDetectTarget { get; private set; }
         [field: SerializeField] private bool isHit;
         [field: SerializeField] private float currentTimeChasing, currentTimeWaiting;
@@ -75,10 +85,28 @@ namespace DS
                 agent.angularSpeed = rotationSpeed; // Use NavMesh rotation with custom speed
             }
             
+            // Initialize charge search vision with starting value
+            currentChargeSearchVisionBonus = chargeSearchVisionBonusStart;
+            
+            // FORCE CORRECT VALUES - Override Inspector values if they're wrong
+            if (chargeSearchVisionBonusMax < chargeForwardVisionBonus)
+            {
+                Debug.LogWarning($"ChargeSearchVisionBonusMax ({chargeSearchVisionBonusMax}) is less than ChargeForwardVisionBonus ({chargeForwardVisionBonus})! Fixing...");
+                chargeSearchVisionBonusMax = 30f; // Force correct value
+                Debug.Log($"ChargeSearchVisionBonusMax corrected to: {chargeSearchVisionBonusMax}");
+            }
+            
             // Initialize charge system
             lastChargeTime = -chargeCooldown; // Allow immediate charge
             
             moveMode = MoveMode.wait;
+            
+            // Debug initial values
+            Debug.Log($"=== INITIAL PARAMETER VALUES ===");
+            Debug.Log($"chargeForwardVisionBonus: {chargeForwardVisionBonus}");
+            Debug.Log($"chargeSearchVisionBonusStart: {chargeSearchVisionBonusStart}");
+            Debug.Log($"chargeSearchVisionBonusMax: {chargeSearchVisionBonusMax}");
+            Debug.Log($"Expected ranges - Charge: {viewRadius + chargeForwardVisionBonus:F1}m, ChargeSearch: {viewRadius + chargeSearchVisionBonusStart:F1}m-{viewRadius + chargeSearchVisionBonusMax:F1}m");
         }
 
         private void Update()
@@ -200,10 +228,21 @@ namespace DS
                 if (showChaseDebug) Debug.Log("Takau: Wait time finished, ready to hunt again");
                 
                 isHit = false;
-                currentTimeWaiting = 0; // Reset wait timer and continue waiting
                 
-                // Note: Charge detection is now handled automatically in FieldOfView()
-                // No need to manually switch to chargeSearch mode
+                // Check if charge is available (cooldown finished)
+                float timeSinceLastCharge = Time.time - lastChargeTime;
+                bool chargeReady = timeSinceLastCharge >= chargeCooldown;
+                
+                if (chargeReady)
+                {
+                    if (showChaseDebug) Debug.Log("Takau: Charge available, entering charge search mode");
+                    SwitchMoveMode(MoveMode.chargeSearch);
+                }
+                else
+                {
+                    if (showChaseDebug) Debug.Log($"Takau: Charge on cooldown ({chargeCooldown - timeSinceLastCharge:F1}s remaining)");
+                    currentTimeWaiting = 0; // Reset wait timer
+                }
             } 
             else 
             {
@@ -213,28 +252,33 @@ namespace DS
 
         private void ChargeSearching()
         {
-            // Rotate to scan for targets during charge search
-            transform.Rotate(0, 45f * Time.deltaTime, 0); // Slow rotation while searching
+            // Gradually expand vision cone during charge search
+            float searchProgress = currentChargeSearchTime / chargeSearchTime; // 0 to 1
+            currentChargeSearchVisionBonus = Mathf.Lerp(chargeSearchVisionBonusStart, chargeSearchVisionBonusMax, searchProgress);
+            
+            // Rotate continuously to scan for targets during charge search
+            float searchRotationSpeed = 90f; // 90 degrees per second
+            transform.Rotate(0, searchRotationSpeed * Time.deltaTime, 0);
+            
             agent.destination = transform.position;
             agent.speed = 0;
             
             if (showChaseDebug) 
             {
-                Debug.Log($"Takau charge searching... Time: {currentChargeSearchTime:F1}s / {chargeSearchTime:F1}s");
+                float expansionProgress = (currentChargeSearchTime / chargeSearchTime) * 100f;
+                Debug.Log($"Takau charge searching... Time: {currentChargeSearchTime:F1}s / {chargeSearchTime:F1}s, Vision: {currentChargeSearchVisionBonus:F1}m ({expansionProgress:F0}% expanded)");
             }
             
-            // Check for charge target in extended forward vision
-            if (CheckChargeTarget())
-            {
-                if (showChaseDebug) Debug.Log("Takau: Charge target found! Initiating charge!");
-                InitiateCharge();
-                return;
-            }
+            // NOTE: Charge detection is now handled in FieldOfView() method with extended range
+            // FieldOfView() will automatically use currentChargeSearchVisionBonus during this mode
             
             // Timeout - return to normal behavior
             if (currentChargeSearchTime > chargeSearchTime)
             {
                 if (showChaseDebug) Debug.Log("Takau: Charge search timeout, returning to wait");
+                
+                // Reset vision bonus when exiting search mode
+                currentChargeSearchVisionBonus = chargeSearchVisionBonusStart;
                 
                 // If target is in normal vision during search timeout, switch to chase
                 if (isDetectTarget && currentTarget != null)
@@ -295,7 +339,7 @@ namespace DS
             float angleToTarget = Vector3.Angle(transform.forward, direction);
             float distance = Vector3.Distance(transform.position, currentTarget.position);
             
-            // Check if target is in charge forward vision cone
+            // Check if target is in charge forward vision cone (normal range)
             bool inChargeVision = angleToTarget < chargeForwardVisionAngle / 2;
             bool inChargeRange = distance >= chargeMinDistance && distance <= (viewRadius + chargeForwardVisionBonus);
             bool lineOfSight = !Physics.Raycast(transform.position, direction, distance, ObstacleMask, QueryTriggerInteraction.Ignore);
@@ -303,6 +347,27 @@ namespace DS
             if (showChaseDebug && inChargeVision && inChargeRange)
             {
                 Debug.Log($"Charge target check: Angle={angleToTarget:F1}°, Distance={distance:F1}m, LOS={lineOfSight}");
+            }
+            
+            return inChargeVision && inChargeRange && lineOfSight;
+        }
+        
+        private bool CheckChargeTargetDuringSearch()
+        {
+            if (currentTarget == null) return false;
+            
+            Vector3 direction = (currentTarget.position - transform.position).normalized;
+            float angleToTarget = Vector3.Angle(transform.forward, direction);
+            float distance = Vector3.Distance(transform.position, currentTarget.position);
+            
+            // Use EXTENDED vision range during charge search
+            bool inChargeVision = angleToTarget < chargeForwardVisionAngle / 2;
+            bool inChargeRange = distance >= chargeMinDistance && distance <= (viewRadius + chargeSearchVisionBonusMax); // Extended range
+            bool lineOfSight = !Physics.Raycast(transform.position, direction, distance, ObstacleMask, QueryTriggerInteraction.Ignore);
+            
+            if (showChaseDebug && inChargeVision && inChargeRange)
+            {
+                Debug.Log($"Charge SEARCH target check: Angle={angleToTarget:F1}°, Distance={distance:F1}m (EXTENDED), LOS={lineOfSight}");
             }
             
             return inChargeVision && inChargeRange && lineOfSight;
@@ -373,6 +438,7 @@ namespace DS
                     break;
                 case MoveMode.chargeSearch:
                     currentChargeSearchTime = 0;
+                    currentChargeSearchVisionBonus = chargeSearchVisionBonusStart; // Reset to starting value
                     agent.isStopped = false;
                     if (showChaseDebug) Debug.Log("Takau: Entering Charge Search Mode - Looking for charge target!");
                     break;
@@ -409,8 +475,38 @@ namespace DS
         {
             float extendedRadius = viewRadius + forwardVisionBonus;
             float chargeExtendedRadius = viewRadius + chargeForwardVisionBonus;
+            float chargeSearchExtendedRadius = viewRadius + currentChargeSearchVisionBonus; // Even more extended during search
             
-            Collider[] range = Physics.OverlapSphere(transform.position, Mathf.Max(extendedRadius, chargeExtendedRadius), TargetMask, QueryTriggerInteraction.Ignore);
+            // SAFETY CHECK - Force correct values if needed
+            if (currentChargeSearchVisionBonus <= chargeForwardVisionBonus)
+            {
+                Debug.LogWarning("Detected wrong currentChargeSearchVisionBonus value! Using hardcoded correct value.");
+                chargeSearchExtendedRadius = viewRadius + chargeSearchVisionBonusMax; // Force correct calculation
+            }
+            
+            // Debug: Show current mode and ranges
+            if (showChaseDebug && Time.frameCount % 60 == 0) // Every 60 frames to avoid spam
+            {
+                Debug.Log($"FieldOfView DEBUG - Mode: {moveMode}");
+                Debug.Log($"  viewRadius: {viewRadius:F1}m");
+                Debug.Log($"  forwardVisionBonus: {forwardVisionBonus:F1}m");
+                Debug.Log($"  chargeForwardVisionBonus: {chargeForwardVisionBonus:F1}m");
+                Debug.Log($"  currentChargeSearchVisionBonus: {currentChargeSearchVisionBonus:F1}m");
+                Debug.Log($"  CALCULATED - Normal: {viewRadius:F1}m, Chase: {extendedRadius:F1}m, Charge: {chargeExtendedRadius:F1}m, ChargeSearch: {chargeSearchExtendedRadius:F1}m");
+                
+                // VALIDATION CHECK
+                if (chargeSearchExtendedRadius <= chargeExtendedRadius)
+                {
+                    Debug.LogError($"ERROR: ChargeSearch range ({chargeSearchExtendedRadius:F1}m) should be > Charge range ({chargeExtendedRadius:F1}m)!");
+                    Debug.LogError($"Check if currentChargeSearchVisionBonus ({currentChargeSearchVisionBonus:F1}) > chargeForwardVisionBonus ({chargeForwardVisionBonus:F1})");
+                    Debug.LogError("Using hardcoded values to fix this!");
+                    chargeSearchExtendedRadius = viewRadius + 30f; // Force fix
+                }
+            }
+            
+            // Use the largest radius to detect all possible targets
+            float maxRadius = Mathf.Max(extendedRadius, chargeExtendedRadius, chargeSearchExtendedRadius);
+            Collider[] range = Physics.OverlapSphere(transform.position, maxRadius, TargetMask, QueryTriggerInteraction.Ignore);
 
             if(range.Length > 0) {
 
@@ -421,36 +517,81 @@ namespace DS
                 float distance = Vector3.Distance(transform.position, currentTarget.position);
 
                 // Check charge detection first (higher priority)
-                bool inChargeVision = angleToTarget < chargeForwardVisionAngle / 2;
-                bool inChargeRange = distance >= chargeMinDistance && distance <= chargeExtendedRadius;
-                bool chargeLineOfSight = !Physics.Raycast(transform.position, direction, distance, ObstacleMask, QueryTriggerInteraction.Ignore);
-                
-                // Check if charge is available (cooldown finished)
                 float timeSinceLastCharge = Time.time - lastChargeTime;
                 bool chargeReady = timeSinceLastCharge >= chargeCooldown;
                 
-                // CHARGE DETECTION (highest priority if charge is ready and not already charging)
-                if (chargeReady && inChargeVision && inChargeRange && chargeLineOfSight && moveMode != MoveMode.charge && moveMode != MoveMode.chargeSearch)
+                // CHARGE DETECTION - Priority system based on mode
+                if (moveMode != MoveMode.charge && chargeReady)
                 {
-                    if (showChaseDebug) 
-                    {
-                        Debug.Log($"CHARGE: Target detected in charge vision! Angle={angleToTarget:F1}°, Distance={distance:F1}m - INITIATING CHARGE!");
-                    }
+                    bool inChargeVision = angleToTarget < chargeForwardVisionAngle / 2;
+                    bool chargeLineOfSight = !Physics.Raycast(transform.position, direction, distance, ObstacleMask, QueryTriggerInteraction.Ignore);
                     
-                    // Directly initiate charge without search phase
-                    chargeTargetPosition = currentTarget.position;
-                    isCharging = true;
-                    lastChargeTime = Time.time;
-                    SwitchMoveMode(MoveMode.charge);
-                    isDetectTarget = false; // Disable normal detection during charge
-                    return;
+                    // Use different charge ranges based on mode
+                    bool inChargeRange = false;
+                    string rangeType = "";
+                    
+                    if (moveMode == MoveMode.chargeSearch)
+                    {
+                        // During charge search, use EXTENDED range (chargeSearchVisionBonus)
+                        inChargeRange = distance >= chargeMinDistance && distance <= chargeSearchExtendedRadius;
+                        rangeType = "EXTENDED SEARCH";
+                        
+                        if (showChaseDebug) 
+                        {
+                            Debug.Log($"★ CHARGE SEARCH ACTIVE: Using range {chargeMinDistance:F1}m - {chargeSearchExtendedRadius:F1}m");
+                            Debug.Log($"★ CHARGE SEARCH CHECK: Angle={angleToTarget:F1}°/{chargeForwardVisionAngle/2:F1}°, Distance={distance:F1}m, Range={chargeMinDistance:F1}m-{chargeSearchExtendedRadius:F1}m, InRange={inChargeRange}, LOS={chargeLineOfSight}");
+                        }
+                        
+                        if (inChargeVision && inChargeRange && chargeLineOfSight)
+                        {
+                            if (showChaseDebug) 
+                            {
+                                Debug.Log($"★★★ CHARGE SEARCH SUCCESS: Target detected in {rangeType} range! Distance={distance:F1}m (Max: {chargeSearchExtendedRadius:F1}m) - INITIATING CHARGE! ★★★");
+                            }
+                            
+                            // Initiate charge from search mode
+                            chargeTargetPosition = currentTarget.position;
+                            isCharging = true;
+                            lastChargeTime = Time.time;
+                            SwitchMoveMode(MoveMode.charge);
+                            isDetectTarget = false; // Disable normal detection during charge
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        // During normal modes (wait/chase), use normal charge range
+                        inChargeRange = distance >= chargeMinDistance && distance <= chargeExtendedRadius;
+                        rangeType = "NORMAL";
+                        
+                        if (showChaseDebug && inChargeVision) 
+                        {
+                            Debug.Log($"NORMAL CHARGE CHECK: Angle={angleToTarget:F1}°/{chargeForwardVisionAngle/2:F1}°, Distance={distance:F1}m, Range={chargeMinDistance:F1}m-{chargeExtendedRadius:F1}m, InRange={inChargeRange}, LOS={chargeLineOfSight}");
+                        }
+                        
+                        if (inChargeVision && inChargeRange && chargeLineOfSight)
+                        {
+                            if (showChaseDebug) 
+                            {
+                                Debug.Log($"CHARGE SUCCESS: Target detected in {rangeType} range! Distance={distance:F1}m (Max: {chargeExtendedRadius:F1}m) - INITIATING CHARGE!");
+                            }
+                            
+                            // Directly initiate charge without search phase
+                            chargeTargetPosition = currentTarget.position;
+                            isCharging = true;
+                            lastChargeTime = Time.time;
+                            SwitchMoveMode(MoveMode.charge);
+                            isDetectTarget = false; // Disable normal detection during charge
+                            return;
+                        }
+                    }
                 }
 
                 bool isInFOV = false;
                 float effectiveViewRadius = viewRadius;
                 
                 // Normal chase detection (not during charge modes)
-                if (moveMode != MoveMode.charge && moveMode != MoveMode.chargeSearch)
+                if (moveMode != MoveMode.charge)
                 {
                     // Check if target is in forward extended vision cone (for chase)
                     if (angleToTarget < forwardVisionAngle / 2)
@@ -478,6 +619,10 @@ namespace DS
                             else if(moveMode == MoveMode.chase) {
                                 // Already in chase, continue
                             }
+                            else if(moveMode == MoveMode.chargeSearch) {
+                                // During charge search, normal vision detection is secondary to charge detection
+                                if (showChaseDebug) Debug.Log($"FOV: Target detected during charge search - continue search or switch to chase");
+                            }
                             else {
                                 if (showChaseDebug) Debug.Log($"FOV: Target detected at {distance:F1}m, switching to chase");
                                 SwitchMoveMode(MoveMode.chase);
@@ -499,7 +644,7 @@ namespace DS
                 }
                 else
                 {
-                    // During charge modes, disable normal detection to prevent interference
+                    // During charge mode, disable normal detection to prevent interference
                     isDetectTarget = false;
                 }
             } else {
@@ -603,33 +748,213 @@ namespace DS
             Vector3 leftChargeDirection = leftChargeRotation * transform.forward;
             Vector3 rightChargeDirection = rightChargeRotation * transform.forward;
             
-            // Use different colors based on mode
-            if (moveMode == MoveMode.chargeSearch || moveMode == MoveMode.charge)
+            // Different ranges and colors based on mode
+            float chargeRange = viewRadius + chargeForwardVisionBonus;
+            float chargeSearchRange = Application.isPlaying ? viewRadius + currentChargeSearchVisionBonus : viewRadius + chargeSearchVisionBonusStart;
+            
+            if (moveMode == MoveMode.chargeSearch)
             {
-                Gizmos.color = new Color(0.5f, 0f, 1f); // Bright purple when active
+                // Create a pulsing effect for charge search mode with gradual expansion visualization
+                float expansionProgress = currentChargeSearchTime / chargeSearchTime; // 0 to 1
+                float pulseIntensity = 0.5f + 0.4f * Mathf.Sin(Time.time * 4f); // Pulse between 0.5 and 0.9
+                
+                // 1. Normal charge range (dimmed)
+                Gizmos.color = new Color(0.3f, 0f, 0.6f, 0.2f); // Very dim purple for normal charge range
+                Gizmos.DrawRay(transform.position, leftChargeDirection * chargeRange);
+                Gizmos.DrawRay(transform.position, rightChargeDirection * chargeRange);
+                Gizmos.DrawWireSphere(transform.position, chargeRange);
+                
+                // 2. GRADUAL EXPANDING RANGE - Show current expansion level
+                float currentSearchRange = viewRadius + currentChargeSearchVisionBonus;
+                Gizmos.color = new Color(1f, expansionProgress, 1f, pulseIntensity); // Color changes with expansion
+                Gizmos.DrawRay(transform.position, leftChargeDirection * currentSearchRange);
+                Gizmos.DrawRay(transform.position, rightChargeDirection * currentSearchRange);
+                
+                // Current expansion range sphere with pulse
+                Gizmos.color = new Color(1f, expansionProgress, 1f, pulseIntensity * 0.4f);
+                Gizmos.DrawWireSphere(transform.position, currentSearchRange);
+                
+                // 3. MAX SEARCH RANGE - Show target max range as faint outline
+                float maxSearchRange = viewRadius + chargeSearchVisionBonusMax;
+                Gizmos.color = new Color(1f, 0f, 1f, 0.1f); // Very faint magenta for max range preview
+                Gizmos.DrawWireSphere(transform.position, maxSearchRange);
+                
+                // Additional visual: Draw the "expansion waves" to show growing effect
+                for (int i = 0; i < 3; i++)
+                {
+                    float waveRadius = chargeRange + (currentChargeSearchVisionBonus - chargeForwardVisionBonus) * (i + 1) / 3f;
+                    if (waveRadius <= currentSearchRange)
+                    {
+                        float waveAlpha = pulseIntensity * 0.15f * (1f - i * 0.3f);
+                        Gizmos.color = new Color(1f, 0.5f, 1f, waveAlpha);
+                        Gizmos.DrawWireSphere(transform.position, waveRadius);
+                    }
+                }
+                
+                // Draw "search beams" - additional rays to emphasize active searching
+                for (int i = -2; i <= 2; i++)
+                {
+                    float searchAngle = i * 5f; // Every 5 degrees
+                    Quaternion searchRotation = Quaternion.AngleAxis(searchAngle, Vector3.up);
+                    Vector3 searchDirection = searchRotation * transform.forward;
+                    
+                    Gizmos.color = new Color(1f, 1f, 0f, pulseIntensity * 0.6f); // Yellow search beams
+                    Gizmos.DrawRay(transform.position, searchDirection * currentSearchRange);
+                }
+                
+                #if UNITY_EDITOR
+                // Labels for ranges with expansion info
+                Vector3 normalChargeLabelPos = transform.position + transform.forward * chargeRange + Vector3.up;
+                UnityEditor.Handles.Label(normalChargeLabelPos, $"Normal Charge: {chargeRange:F1}m");
+                
+                Vector3 currentSearchLabelPos = transform.position + transform.forward * currentSearchRange + Vector3.up * 2f;
+                UnityEditor.Handles.Label(currentSearchLabelPos, $"★ EXPANDING: {currentSearchRange:F1}m ({expansionProgress*100:F0}%) ★");
+                
+                Vector3 maxSearchLabelPos = transform.position + transform.forward * maxSearchRange + Vector3.up * 3f;
+                UnityEditor.Handles.Label(maxSearchLabelPos, $"Max Target: {maxSearchRange:F1}m");
+                
+                // Show the expansion progress clearly
+                Vector3 progressLabelPos = transform.position + Vector3.up * 4f;
+                UnityEditor.Handles.Label(progressLabelPos, $"EXPANSION: {currentChargeSearchVisionBonus:F1}m / {chargeSearchVisionBonusMax:F1}m");
+                UnityEditor.Handles.Label(progressLabelPos + Vector3.up * 0.5f, $"Progress: {expansionProgress*100:F0}% ({currentChargeSearchTime:F1}s/{chargeSearchTime:F1}s)");
+                #endif
+            }
+            else if (moveMode == MoveMode.charge)
+            {
+                // Show normal charge range during actual charge
+                Gizmos.color = new Color(0.5f, 0f, 1f); // Bright purple when charging
+                Gizmos.DrawRay(transform.position, leftChargeDirection * chargeRange);
+                Gizmos.DrawRay(transform.position, rightChargeDirection * chargeRange);
+                
+                // Charge extended range sphere
+                Gizmos.color = new Color(0.5f, 0f, 1f, 0.2f);
+                Gizmos.DrawWireSphere(transform.position, chargeRange);
+                
+                #if UNITY_EDITOR
+                // Label for charge range
+                Vector3 chargeLabelPos = transform.position + transform.forward * chargeRange;
+                UnityEditor.Handles.Label(chargeLabelPos, $"Charging: {chargeRange:F1}m");
+                #endif
             }
             else
             {
-                Gizmos.color = new Color(0.5f, 0f, 1f, 0.4f); // Transparent purple when inactive
+                // Show ranges when inactive (for comparison and editor setup)
+                
+                // Normal charge range
+                Gizmos.color = new Color(0.5f, 0f, 1f, 0.4f); // Transparent purple for normal charge
+                Gizmos.DrawRay(transform.position, leftChargeDirection * chargeRange);
+                Gizmos.DrawRay(transform.position, rightChargeDirection * chargeRange);
+                Gizmos.DrawWireSphere(transform.position, chargeRange);
+                
+                // EDITOR MODE: Show search start range preview
+                if (!Application.isPlaying)
+                {
+                    float searchStartRange = viewRadius + chargeSearchVisionBonusStart;
+                    float searchMaxRange = viewRadius + chargeSearchVisionBonusMax;
+                    
+                    // Search start range (what you see when you start search)
+                    Gizmos.color = new Color(1f, 0.5f, 1f, 0.3f); // Light magenta for search start
+                    Gizmos.DrawRay(transform.position, leftChargeDirection * searchStartRange);
+                    Gizmos.DrawRay(transform.position, rightChargeDirection * searchStartRange);
+                    Gizmos.DrawWireSphere(transform.position, searchStartRange);
+                    
+                    // Search max range (target when fully expanded)
+                    Gizmos.color = new Color(1f, 0f, 1f, 0.2f); // Transparent magenta for search max
+                    Gizmos.DrawWireSphere(transform.position, searchMaxRange);
+                    
+                    // Draw expansion area between start and max
+                    Gizmos.color = new Color(1f, 0.8f, 1f, 0.1f);
+                    for (float r = searchStartRange; r <= searchMaxRange; r += 1f)
+                    {
+                        Gizmos.DrawWireSphere(transform.position, r);
+                    }
+                }
+                else
+                {
+                    // PLAY MODE: Show current search range as dotted/dashed effect
+                    Gizmos.color = new Color(1f, 0f, 1f, 0.2f); // Very transparent magenta for search range preview
+                    Gizmos.DrawWireSphere(transform.position, chargeSearchRange);
+                }
+                
+                #if UNITY_EDITOR
+                // Labels for ranges
+                Vector3 chargeLabelPos = transform.position + transform.forward * chargeRange;
+                UnityEditor.Handles.Label(chargeLabelPos, $"Charge: {chargeRange:F1}m");
+                
+                if (!Application.isPlaying)
+                {
+                    // EDITOR MODE LABELS
+                    Vector3 searchStartPos = transform.position + transform.forward * (viewRadius + chargeSearchVisionBonusStart);
+                    UnityEditor.Handles.Label(searchStartPos, $"Search Start: {viewRadius + chargeSearchVisionBonusStart:F1}m");
+                    
+                    Vector3 searchMaxPos = transform.position + transform.forward * (viewRadius + chargeSearchVisionBonusMax);
+                    UnityEditor.Handles.Label(searchMaxPos, $"Search Max: {viewRadius + chargeSearchVisionBonusMax:F1}m");
+                    
+                    // Show expansion info
+                    Vector3 expansionInfoPos = transform.position + Vector3.up * 3f;
+                    UnityEditor.Handles.Label(expansionInfoPos, $"SEARCH EXPANSION: {chargeSearchVisionBonusStart:F1}m → {chargeSearchVisionBonusMax:F1}m");
+                    UnityEditor.Handles.Label(expansionInfoPos + Vector3.up * 0.5f, $"Over {chargeSearchTime:F1} seconds");
+                }
+                else
+                {
+                    // PLAY MODE LABELS
+                    Vector3 searchPreviewPos = transform.position + transform.forward * chargeSearchRange;
+                    UnityEditor.Handles.Label(searchPreviewPos, $"Search Range: {chargeSearchRange:F1}m");
+                }
+                #endif
             }
             
-            float chargeRange = viewRadius + chargeForwardVisionBonus;
-            Gizmos.DrawRay(transform.position, leftChargeDirection * chargeRange);
-            Gizmos.DrawRay(transform.position, rightChargeDirection * chargeRange);
-            
-            // Charge extended range sphere
-            Gizmos.color = new Color(0.5f, 0f, 1f, 0.2f);
-            Gizmos.DrawWireSphere(transform.position, chargeRange);
-            
             #if UNITY_EDITOR
-            // Label for charge range
-            Vector3 chargeLabelPos = transform.position + transform.forward * chargeRange;
-            UnityEditor.Handles.Label(chargeLabelPos, $"Charge Range: {chargeRange:F1}m");
-            
-            // Label for charge angle
+            // Label for charge angle (always visible)
             Vector3 angleLabel = transform.position + transform.forward * (chargeRange * 0.7f);
             UnityEditor.Handles.Label(angleLabel, $"Charge Angle: {chargeForwardVisionAngle}°");
+            
+            // Additional comparison labels
+            Vector3 comparisonPos = transform.position + Vector3.up * 2f; // Above Takau
+            if (moveMode == MoveMode.chargeSearch && Application.isPlaying)
+            {
+                UnityEditor.Handles.Label(comparisonPos, $"SEARCH MODE: {chargeSearchRange:F1}m vs Normal: {chargeRange:F1}m");
+                UnityEditor.Handles.Label(comparisonPos + Vector3.up * 0.5f, $"Extended by: +{currentChargeSearchVisionBonus - chargeForwardVisionBonus:F1}m");
+            }
+            else if (!Application.isPlaying)
+            {
+                // EDITOR MODE: Show setup info
+                float searchStartRange = viewRadius + chargeSearchVisionBonusStart;
+                float searchMaxRange = viewRadius + chargeSearchVisionBonusMax;
+                UnityEditor.Handles.Label(comparisonPos, $"EDITOR: Normal: {chargeRange:F1}m | Search: {searchStartRange:F1}m→{searchMaxRange:F1}m");
+                UnityEditor.Handles.Label(comparisonPos + Vector3.up * 0.5f, $"Search expansion: +{chargeSearchVisionBonusStart:F1}m to +{chargeSearchVisionBonusMax:F1}m");
+            }
+            else
+            {
+                UnityEditor.Handles.Label(comparisonPos, $"Normal: {chargeRange:F1}m | Search: {chargeSearchRange:F1}m");
+            }
             #endif
+            
+            // Visual ring indicators for different charge ranges
+            if (moveMode == MoveMode.chargeSearch)
+            {
+                // Create a "pulse" effect for search mode
+                float pulseAlpha = 0.3f + 0.2f * Mathf.Sin(Time.time * 3f); // Pulsing between 0.3 and 0.5
+                
+                // Inner ring (normal charge range)
+                Gizmos.color = new Color(0.5f, 0f, 1f, pulseAlpha);
+                Gizmos.DrawWireSphere(transform.position, chargeRange);
+                
+                // Outer ring (extended search range)
+                Gizmos.color = new Color(1f, 0f, 1f, pulseAlpha);
+                Gizmos.DrawWireSphere(transform.position, chargeSearchRange);
+                
+                // Connect the rings with lines to show expansion
+                for (int i = 0; i < 8; i++)
+                {
+                    float angle = i * 45f * Mathf.Deg2Rad;
+                    Vector3 innerPoint = transform.position + new Vector3(Mathf.Sin(angle) * chargeRange, 0, Mathf.Cos(angle) * chargeRange);
+                    Vector3 outerPoint = transform.position + new Vector3(Mathf.Sin(angle) * chargeSearchRange, 0, Mathf.Cos(angle) * chargeSearchRange);
+                    
+                    Gizmos.color = new Color(1f, 0f, 1f, 0.3f);
+                    Gizmos.DrawLine(innerPoint, outerPoint);
+                }
+            }
             
             // Charge min distance circle
             Gizmos.color = new Color(0.5f, 0f, 0.5f, 0.3f);
@@ -666,12 +991,32 @@ namespace DS
         {
             if (!showChaseDebug) return;
             
-            GUILayout.BeginArea(new Rect(10, 10, 380, 300));
+            GUILayout.BeginArea(new Rect(10, 10, 420, 400));
             GUILayout.Label("=== TAKAU AI DEBUG ===");
             GUILayout.Label($"Mode: {moveMode}");
             GUILayout.Label($"Target: {(currentTarget ? currentTarget.name : "None")}");
             GUILayout.Label($"Detect Target: {isDetectTarget}");
             GUILayout.Label($"Is Hit: {isHit}");
+            
+            // PARAMETER DEBUG - Show actual parameter values
+            GUILayout.Label("=== PARAMETERS DEBUG ===");
+            GUILayout.Label($"viewRadius: {viewRadius:F1}m");
+            GUILayout.Label($"forwardVisionBonus: {forwardVisionBonus:F1}m");
+            GUILayout.Label($"chargeForwardVisionBonus: {chargeForwardVisionBonus:F1}m");
+            GUILayout.Label($"currentChargeSearchVisionBonus: {currentChargeSearchVisionBonus:F1}m");
+            GUILayout.Label($"chargeSearchVisionBonusStart: {chargeSearchVisionBonusStart:F1}m");
+            GUILayout.Label($"chargeSearchVisionBonusMax: {chargeSearchVisionBonusMax:F1}m");
+            
+            // CALCULATED RANGES
+            float calculatedExtended = viewRadius + forwardVisionBonus;
+            float calculatedCharge = viewRadius + chargeForwardVisionBonus;
+            float calculatedChargeSearch = viewRadius + currentChargeSearchVisionBonus;
+            
+            GUILayout.Label("=== CALCULATED RANGES ===");
+            GUILayout.Label($"Normal: {viewRadius:F1}m");
+            GUILayout.Label($"Chase Extended: {calculatedExtended:F1}m ({viewRadius:F1} + {forwardVisionBonus:F1})");
+            GUILayout.Label($"Charge: {calculatedCharge:F1}m ({viewRadius:F1} + {chargeForwardVisionBonus:F1})");
+            GUILayout.Label($"ChargeSearch: {calculatedChargeSearch:F1}m ({viewRadius:F1} + {currentChargeSearchVisionBonus:F1})");
             
             if (currentTarget != null)
             {
@@ -701,15 +1046,45 @@ namespace DS
                 // Charge vision check with real-time status
                 bool inChargeFOV = angle < chargeForwardVisionAngle / 2;
                 bool inChargeRange = dist >= chargeMinDistance && dist <= (viewRadius + chargeForwardVisionBonus);
+                bool inChargeSearchRange = dist >= chargeMinDistance && dist <= (viewRadius + currentChargeSearchVisionBonus);
                 float timeSinceLastCharge = Time.time - lastChargeTime;
                 bool chargeReady = timeSinceLastCharge >= chargeCooldown;
                 bool chargeConditionsMet = chargeReady && inChargeFOV && inChargeRange && !blocked;
+                bool chargeSearchConditionsMet = chargeReady && inChargeFOV && inChargeSearchRange && !blocked;
                 
                 GUILayout.Label($"=== CHARGE STATUS ===");
                 GUILayout.Label($"In Charge FOV ({chargeForwardVisionAngle}°): {inChargeFOV}");
                 GUILayout.Label($"In Charge Range ({chargeMinDistance:F1}m-{viewRadius + chargeForwardVisionBonus:F1}m): {inChargeRange}");
+                GUILayout.Label($"In Charge SEARCH Range ({chargeMinDistance:F1}m-{viewRadius + currentChargeSearchVisionBonus:F1}m): {inChargeSearchRange}");
                 GUILayout.Label($"Charge Ready: {(chargeReady ? "YES" : $"NO ({chargeCooldown - timeSinceLastCharge:F1}s)")}");
-                GUILayout.Label($"ALL CHARGE CONDITIONS MET: {(chargeConditionsMet ? "YES - READY TO CHARGE!" : "NO")}");
+                
+                // Show comparison between normal and search ranges
+                float normalChargeRange = viewRadius + chargeForwardVisionBonus;
+                float extendedSearchRange = viewRadius + currentChargeSearchVisionBonus;
+                float searchBonus = currentChargeSearchVisionBonus - chargeForwardVisionBonus;
+                
+                GUILayout.Label($"RANGE COMPARISON:");
+                GUILayout.Label($"  Normal Charge: {normalChargeRange:F1}m");
+                GUILayout.Label($"  Search Extended: {extendedSearchRange:F1}m (+{searchBonus:F1}m)");
+                
+                if (moveMode == MoveMode.chargeSearch)
+                {
+                    GUILayout.Label($"*** CHARGE SEARCH MODE: USING EXTENDED {extendedSearchRange:F1}m RANGE ***");
+                    GUILayout.Label($"CHARGE SEARCH CONDITIONS MET: {(chargeSearchConditionsMet ? "YES - READY TO CHARGE!" : "NO")}");
+                    
+                    // Additional debug for charge search
+                    GUILayout.Label($"--- EXTENDED RANGE DEBUG ---");
+                    GUILayout.Label($"Current Distance: {dist:F1}m");
+                    GUILayout.Label($"Extended Max Range: {extendedSearchRange:F1}m");
+                    GUILayout.Label($"Normal Max Range: {normalChargeRange:F1}m");
+                    GUILayout.Label($"In Extended Range: {(dist <= extendedSearchRange ? "YES" : "NO")}");
+                    GUILayout.Label($"In Normal Range: {(dist <= normalChargeRange ? "YES" : "NO")}");
+                    GUILayout.Label($"Extended Bonus Working: {(dist > normalChargeRange && dist <= extendedSearchRange ? "YES!" : "NO")}");
+                }
+                else
+                {
+                    GUILayout.Label($"NORMAL CHARGE CONDITIONS MET: {(chargeConditionsMet ? "YES - READY TO CHARGE!" : "NO")}");
+                }
             }
             
             GUILayout.Label($"Chase Time: {currentTimeChasing:F1}s");
@@ -723,19 +1098,24 @@ namespace DS
             {
                 case MoveMode.wait:
                     GUILayout.Label($"Wait Status: {(isDetectTarget ? "READY TO CHASE" : "SCANNING...")}");
-                    float timeSinceLastCharge = Time.time - lastChargeTime;
-                    bool chargeReady = timeSinceLastCharge >= chargeCooldown;
-                    GUILayout.Label($"Charge Ready: {(chargeReady ? "YES" : $"NO ({chargeCooldown - timeSinceLastCharge:F1}s)")}");
+                    float waitTimeSinceLastCharge = Time.time - lastChargeTime;
+                    bool waitChargeReady = waitTimeSinceLastCharge >= chargeCooldown;
+                    GUILayout.Label($"Charge Ready: {(waitChargeReady ? "YES" : $"NO ({chargeCooldown - waitTimeSinceLastCharge:F1}s)")}");
                     break;
                 case MoveMode.chase:
                     GUILayout.Label($"Chase Status: HUNTING");
                     break;
                 case MoveMode.chargeSearch:
+                    float searchProgress = currentChargeSearchTime / chargeSearchTime;
                     GUILayout.Label($"Charge Search: {currentChargeSearchTime:F1}s / {chargeSearchTime:F1}s");
+                    GUILayout.Label($"Vision Expansion: {currentChargeSearchVisionBonus:F1}m ({searchProgress*100:F0}%)");
+                    GUILayout.Label($"Range: {chargeSearchVisionBonusStart:F1}m → {chargeSearchVisionBonusMax:F1}m");
                     if (currentTarget != null)
                     {
                         bool chargeTargetValid = CheckChargeTarget();
-                        GUILayout.Label($"Charge Target Valid: {chargeTargetValid}");
+                        bool chargeSearchTargetValid = CheckChargeTargetDuringSearch();
+                        GUILayout.Label($"Normal Charge Target Valid: {chargeTargetValid}");
+                        GUILayout.Label($"EXPANDING Search Target Valid: {chargeSearchTargetValid}");
                     }
                     break;
                 case MoveMode.charge:
@@ -746,6 +1126,50 @@ namespace DS
                         GUILayout.Label($"Dist to Charge Target: {distToChargeTarget:F1}m");
                     }
                     break;
+            }
+            
+            GUILayout.EndArea();
+            
+            // Parameter fixing buttons
+            GUILayout.BeginArea(new Rect(440, 10, 200, 200));
+            GUILayout.Label("=== PARAMETER FIX ===");
+            
+            if (GUILayout.Button("Reset To Start Values"))
+            {
+                // Reset to starting values
+                currentChargeSearchVisionBonus = chargeSearchVisionBonusStart;
+                Debug.Log("ChargeSearch vision reset to start value!");
+            }
+            
+            if (GUILayout.Button("Force To Max Values"))
+            {
+                currentChargeSearchVisionBonus = chargeSearchVisionBonusMax;
+                Debug.Log("ChargeSearch vision forced to max value!");
+            }
+            
+            if (GUILayout.Button("Show Current Values"))
+            {
+                Debug.Log($"CURRENT VALUES:");
+                Debug.Log($"  chargeForwardVisionBonus: {chargeForwardVisionBonus}");
+                Debug.Log($"  currentChargeSearchVisionBonus: {currentChargeSearchVisionBonus}");
+                Debug.Log($"  chargeSearchVisionBonusStart: {chargeSearchVisionBonusStart}");
+                Debug.Log($"  chargeSearchVisionBonusMax: {chargeSearchVisionBonusMax}");
+                Debug.Log($"  Expected ChargeSearch Range: {viewRadius + currentChargeSearchVisionBonus:F1}m");
+            }
+            
+            // Real-time parameter display
+            GUILayout.Label("=== REALTIME VALUES ===");
+            GUILayout.Label($"Normal Charge: {chargeForwardVisionBonus:F1}");
+            GUILayout.Label($"Search Charge: {currentChargeSearchVisionBonus:F1}");
+            GUILayout.Label($"Difference: {currentChargeSearchVisionBonus - chargeForwardVisionBonus:F1}");
+            
+            if (currentChargeSearchVisionBonus <= chargeForwardVisionBonus)
+            {
+                GUILayout.Label("❌ PROBLEM DETECTED!");
+            }
+            else
+            {
+                GUILayout.Label("✅ Values OK");
             }
             
             GUILayout.EndArea();
@@ -817,5 +1241,40 @@ namespace DS
             }
         }
 
+        // Debug method to manually set current parameter values
+        private void SetChargeSearchBonus(float value)
+        {
+            currentChargeSearchVisionBonus = value;
+            Debug.Log($"CurrentChargeSearchVisionBonus set to: {currentChargeSearchVisionBonus}");
+        }
+        
+        // Method to ensure correct parameter values
+        [System.Obsolete("Use for debugging only")]
+        public void ForceCorrectParameters()
+        {
+            chargeForwardVisionBonus = 18f;
+            chargeSearchVisionBonusStart = 18.5f;
+            chargeSearchVisionBonusMax = 30f;
+            currentChargeSearchVisionBonus = chargeSearchVisionBonusStart;
+            Debug.Log("Parameters forcefully corrected!");
+        }
+        
+        // Property to get the current charge search range (gradual expansion)
+        public float GetCurrentChargeSearchRange()
+        {
+            return viewRadius + currentChargeSearchVisionBonus;
+        }
+        
+        // Property to get the max charge search range
+        public float GetMaxChargeSearchRange()
+        {
+            return viewRadius + chargeSearchVisionBonusMax;
+        }
+        
+        // Property to get the correct charge range
+        public float GetCorrectChargeRange()
+        {
+            return viewRadius + chargeForwardVisionBonus;
+        }
     }
 }
