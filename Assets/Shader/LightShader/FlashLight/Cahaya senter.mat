@@ -108,7 +108,7 @@ Material:
     m_Ints: []
     m_Floats:
     - Boolean_52C16ADA: 1
-    - Vector1_C436030E: 0.1
+    - Vector1_C436030E: 0.3
     - Vector1_D9BD7578: 0.4
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0

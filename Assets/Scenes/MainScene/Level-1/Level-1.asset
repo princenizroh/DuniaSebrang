@@ -64,7 +64,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   active: 1
   mode:
-    m_OverrideState: 0
+    m_OverrideState: 1
     m_Value: 2
   gaussianStart:
     m_OverrideState: 0
@@ -79,14 +79,14 @@ MonoBehaviour:
     m_OverrideState: 0
     m_Value: 0
   focusDistance:
-    m_OverrideState: 0
-    m_Value: 5.84
+    m_OverrideState: 1
+    m_Value: 6.1
   aperture:
-    m_OverrideState: 0
-    m_Value: 20.69
+    m_OverrideState: 1
+    m_Value: 5.3
   focalLength:
-    m_OverrideState: 0
-    m_Value: 218
+    m_OverrideState: 1
+    m_Value: 175
   bladeCount:
     m_OverrideState: 0
     m_Value: 5
