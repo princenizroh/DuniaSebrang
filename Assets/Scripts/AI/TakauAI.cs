@@ -18,6 +18,15 @@ namespace DS
         [field: SerializeField] public float loseTargetDistance { get; private set; } = 15f;
         [field: SerializeField] public float minChaseDistance { get; private set; } = 2f;
         [field: SerializeField] public bool showChaseDebug { get; private set; } = true;
+        
+        [Header("Charge System")]
+        [field: SerializeField] public float chargeSpeed { get; private set; } = 12f;
+        [field: SerializeField] public float chargeDistance { get; private set; } = 20f;
+        [field: SerializeField] public float chargeSearchTime { get; private set; } = 4f;
+        [field: SerializeField] public float chargeCooldown { get; private set; } = 8f;
+        [field: SerializeField] public float chargeForwardVisionAngle { get; private set; } = 30f;
+        [field: SerializeField] public float chargeForwardVisionBonus { get; private set; } = 8f;
+        [field: SerializeField] public float chargeMinDistance { get; private set; } = 5f;
 
         [Header("Rotation Settings")]
         [field: SerializeField] public float rotationSpeed { get; private set; } = 120f;
@@ -36,37 +45,12 @@ namespace DS
         [field: SerializeField] public LayerMask TargetMask { get; private set; }
         [field: SerializeField] public LayerMask ObstacleMask { get; private set; }
 
-        [Header("Boss Stats")]
-        [field: SerializeField] public float maxHealth { get; private set; } = 100f;
-        [field: SerializeField] public float currentHealth { get; private set; }
-        [field: SerializeField] public float attackRange { get; private set; } = 2f;
-        [field: SerializeField] public float attackCooldown { get; private set; } = 2f;
-        [field: SerializeField] private float lastAttackTime;
-
-        [Header("Charge Attack System")]
-        [field: SerializeField] public float chargeSpeed { get; private set; } = 20f; // Lebih cepat lagi
-        [field: SerializeField] public float chargeDistance { get; private set; } = 25f; // Jarak charge yang lebih jauh
-        [field: SerializeField] public float chargeMinDistance { get; private set; } = 8f; // Jarak minimum untuk charge
-        [field: SerializeField] public float chargeSearchTime { get; private set; } = 1.5f; // Lebih cepat mencari
-        [field: SerializeField] public float chargeCooldownTime { get; private set; } = 4f; // Cooldown lebih singkat
-        [field: SerializeField] public float chargeSearchRotationSpeed { get; private set; } = 90f; // Rotasi lebih cepat
-        [field: SerializeField] public float chargeChancePerSecond { get; private set; } = 0.5f; // 50% chance per detik saat chase
-        [field: SerializeField] public float directChargeChance { get; private set; } = 0.7f; // 70% chance langsung charge dari wait
-        [field: SerializeField] public float chargeAnimationSpeedMultiplier { get; private set; } = 2.5f;
-        [field: SerializeField] public bool showChargeDebug { get; private set; } = true;
-        
-        // Charge state variables
-        [field: SerializeField] private bool isCharging { get; set; }
-        [field: SerializeField] private bool isChargeCooldown { get; set; }
-        [field: SerializeField] private Vector3 chargeTargetPosition { get; set; }
-        [field: SerializeField] private Vector3 chargeStartPosition { get; set; }
-        [field: SerializeField] private float currentChargeSearchTime { get; set; }
-        [field: SerializeField] private float currentChargeCooldownTime { get; set; }
-        [field: SerializeField] private float chargeSearchRotation { get; set; }
-
         [field: SerializeField] public bool isDetectTarget { get; private set; }
         [field: SerializeField] private bool isHit;
         [field: SerializeField] private float currentTimeChasing, currentTimeWaiting;
+        [field: SerializeField] private float currentChargeSearchTime, lastChargeTime;
+        [field: SerializeField] private Vector3 chargeTargetPosition;
+        [field: SerializeField] private bool isCharging;
 
         private void Awake()
         {
@@ -79,11 +63,7 @@ namespace DS
                 agent = GetComponent<NavMeshAgent>();
             if (agent.stoppingDistance < 0.5f)
                 agent.stoppingDistance = 0.5f;
-                
-            // Initialize boss health
-            currentHealth = maxHealth;
-            
-            // Configure NavMeshAgent rotation settings
+
             if (useCustomRotation)
             {
                 agent.updateRotation = false; // Disable NavMesh rotation
@@ -95,7 +75,9 @@ namespace DS
                 agent.angularSpeed = rotationSpeed; // Use NavMesh rotation with custom speed
             }
             
-            // Start in wait mode
+            // Initialize charge system
+            lastChargeTime = -chargeCooldown; // Allow immediate charge
+            
             moveMode = MoveMode.wait;
         }
 
@@ -103,100 +85,31 @@ namespace DS
         {
             switch (moveMode)
             {
-                case MoveMode.attack:
-                    // Attacking();
-                    animator.Play("Swiping");
-                    animator.speed = 1f; // Normal speed for attack
-                    break;
                 case MoveMode.chase:
                     Chasing();
                     animator.Play("Run");
-                    animator.speed = 1f; // Normal speed for chase
                     break;
                 case MoveMode.wait:
                     Waiting();
                     animator.Play("Roaming");
-                    animator.speed = 1f; // Normal speed for wait
-                    break;
-                case MoveMode.chargeSearch:
-                    ChargeSearching();
-                    animator.Play("Roaming"); // Bisa diganti ke animasi search khusus
-                    animator.speed = 1f; // Normal speed for search
                     break;
                 case MoveMode.charge:
                     Charging();
-                    animator.Play("Run"); // Animasi charge lebih cepat
-                    animator.speed = chargeAnimationSpeedMultiplier; // Speed multiplier untuk charge
+                    animator.Play("Run");
                     break;
-                case MoveMode.dying:
-                    // Dying();
-                    animator.Play("Dying");
-                    animator.speed = 1f; // Normal speed for death
+                case MoveMode.chargeSearch:
+                    ChargeSearching();
+                    animator.Play("Roaming");
                     break;
             }
 
             FieldOfView();
-            
-            // Handle custom rotation after all movement logic
             HandleRotation();
         }
 
-        // private void Attacking()
-        // {
-        //     // Stop moving during attack
-        //     agent.speed = 0;
-        //     agent.destination = transform.position;
-            
-        //     // Check if target is in attack range
-        //     if (currentTarget != null)
-        //     {
-        //         float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
-                
-        //         if (distanceToTarget <= attackRange)
-        //         {
-        //             // Face the target
-        //             Vector3 direction = (currentTarget.position - transform.position).normalized;
-        //             transform.rotation = Quaternion.LookRotation(direction);
-                    
-        //             // Attack if cooldown is ready
-        //             if (Time.time >= lastAttackTime + attackCooldown)
-        //             {
-        //                 PerformAttack();
-        //                 lastAttackTime = Time.time;
-        //             }
-        //         }
-        //         else
-        //         {
-        //             // Target too far, switch to chase
-        //             SwitchMoveMode(MoveMode.chase);
-        //         }
-        //     }
-        //     else
-        //     {
-        //         // No target, go to wait mode
-        //         SwitchMoveMode(MoveMode.wait);
-        //     }
-        // }
-        
-        // private void PerformAttack()
-        // {
-        //     Debug.Log("Takau performs attack!");
-            
-        //     // Check for targets in attack range
-        //     Collider[] targets = Physics.OverlapSphere(transform.position, attackRange, TargetMask);
-            
-        //     foreach (Collider target in targets)
-        //     {
-        //         // Deal damage to player or trigger game over
-        //         Debug.Log("Takau hits target: " + target.name);
-        //         // Add damage logic here
-        //     }
-        // }
-
         private void Chasing()
         {
-            // Jika tidak ada target, kembali ke wait
-            if (currentTarget == null)
+            if (currentTarget == null) // Jika tidak ada target, kembali ke wait
             {
                 if (showChaseDebug) Debug.Log("Takau: No target found, switching to wait");
                 SwitchMoveMode(MoveMode.wait);
@@ -210,86 +123,52 @@ namespace DS
                 Debug.Log($"Takau chasing: Distance to target = {distanceToTarget:F2}m");
             }
             
-            // CHECK FOR CHARGE OPPORTUNITY - prioritas tertinggi
-            // Hanya lakukan charge jika tidak dalam cooldown dan jarak memungkinkan
-            if (!isChargeCooldown && distanceToTarget >= chargeMinDistance && distanceToTarget <= chargeDistance)
-            {
-                // Peluang untuk charge berdasarkan parameter
-                float chargeChance = chargeChancePerSecond * Time.deltaTime;
-                if (Random.value < chargeChance)
-                {
-                    if (showChaseDebug) Debug.Log($"Takau: Initiating charge attack! Distance: {distanceToTarget:F2}m");
-                    SwitchMoveMode(MoveMode.chargeSearch);
-                    return;
-                }
-            }
-            
-            // Jika target terlalu jauh, hentikan chase
-            if (distanceToTarget > loseTargetDistance)
+            if (distanceToTarget > loseTargetDistance) // Jika target terlalu jauh, hentikan chase
             {
                 if (showChaseDebug) Debug.Log("Takau: Target too far away, losing chase");
                 SwitchMoveMode(MoveMode.wait);
                 return;
             }
             
-            // Jika sangat dekat dengan target (hit detection)
-            if (distanceToTarget <= radiusHit)
+            if (distanceToTarget <= radiusHit) // Jika sangat dekat dengan target (hit detection)
             {
                 if (!isHit)
                 {
                     Debug.Log("Takau caught the player - Game Over!");
                     isHit = true;
-                    // Trigger game over logic atau damage player
-                    OnPlayerCaught();
+                    OnPlayerCaught(); // Trigger game over logic atau damage player
                 }
                 return;
-            }
+            }            
+            agent.speed = chaseSpeed; // Set chase speed and destination
             
-            // Set chase speed and destination
-            agent.speed = chaseSpeed;
-            
-            // Jika sudah dekat tapi belum hit, perlambat untuk lebih menakutkan
-            if (distanceToTarget <= minChaseDistance)
+            if (distanceToTarget <= minChaseDistance)  // Jika sudah dekat tapi belum hit, perlambat untuk lebih menakutkan
             {
                 agent.speed = chaseSpeed * 0.7f; // Perlambat 30%
                 if (showChaseDebug) Debug.Log("Takau: Close to target, slowing down");
             }
             
-            // Set destination (NavMesh will handle pathfinding)
-            agent.destination = currentTarget.position;
-            
-            // Manual rotation akan dihandle oleh HandleRotation() method
-            // Ini memberikan rotasi yang lebih responsif daripada NavMesh default
-
-            // Chase timeout logic - jika chase terlalu lama tanpa hasil
-            if(currentTimeChasing > maxTimeChasing) 
+            agent.destination = currentTarget.position; // Set destination (NavMesh will handle pathfinding)
+            if(currentTimeChasing > maxTimeChasing)  // Chase timeout logic - jika chase terlalu lama tanpa hasil
             {
                 if (showChaseDebug) Debug.Log("Takau: Chase timeout, switching to wait");
                 SwitchMoveMode(MoveMode.wait);
             } 
             else if(!isDetectTarget) 
             {
-                // Masih chase tapi target tidak terdeteksi FOV (mungkin di belakang obstacle)
-                currentTimeChasing += Time.deltaTime;
+                currentTimeChasing += Time.deltaTime; // Masih chase tapi target tidak terdeteksi FOV (mungkin di belakang obstacle)
                 if (showChaseDebug) Debug.Log($"Takau: Target not in FOV, chase time: {currentTimeChasing:F1}s");
             } 
             else if(isDetectTarget)
             {
-                // Reset timer jika target masih terlihat
-                currentTimeChasing = 0;
+                currentTimeChasing = 0; // Reset timer jika target masih terlihat
             }
         }
         
         private void OnPlayerCaught()
         {
-            // Method untuk handle ketika player tertangkap
-            // Bisa trigger game over scene, damage player, dll
             if (showChaseDebug) Debug.Log("Takau successfully caught the player!");
-            
-            // Stop movement
             agent.isStopped = true;
-            
-            // Disable further detection
             isDetectTarget = false;
             
             // Bisa tambahkan:
@@ -301,78 +180,30 @@ namespace DS
 
         private void Waiting()
         {
-            // Stop movement saat waiting
             agent.destination = transform.position;
             agent.speed = 0;
-            
-            // Handle charge cooldown first
-            if (isChargeCooldown)
-            {
-                if (showChaseDebug) 
-                {
-                    Debug.Log($"Takau cooldown... Time: {currentChargeCooldownTime:F1}s / {chargeCooldownTime:F1}s");
-                }
-                
-                // Check if player still in range during cooldown
-                if (isDetectTarget && currentTarget != null)
-                {
-                    if (showChaseDebug) Debug.Log("Takau: Player detected during cooldown! Switching to chase.");
-                    isChargeCooldown = false;
-                    SwitchMoveMode(MoveMode.chase);
-                    return;
-                }
-                
-                // Cooldown timer
-                if (currentChargeCooldownTime > chargeCooldownTime)
-                {
-                    if (showChaseDebug) Debug.Log("Takau: Cooldown finished, ready for next charge cycle");
-                    isChargeCooldown = false;
-                    currentTimeWaiting = 0; // Reset wait timer
-                }
-                else
-                {
-                    currentChargeCooldownTime += Time.deltaTime;
-                }
-                return;
-            }
             
             if (showChaseDebug) 
             {
                 Debug.Log($"Takau waiting... Time: {currentTimeWaiting:F1}s / {maxTimeWaiting:F1}s - Detect: {isDetectTarget}");
             }
             
-            // PRIORITY: Jika detect target, cek apakah harus langsung charge atau chase
-            if (isDetectTarget && currentTarget != null)
+            if (isDetectTarget && currentTarget != null) // PRIORITY: Jika detect target, langsung switch ke chase (jangan tunggu timer)
             {
-                float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
-                
-                // Jika jarak jauh dan tidak dalam cooldown, prioritaskan charge
-                if (!isChargeCooldown && distanceToTarget >= chargeMinDistance && distanceToTarget <= chargeDistance)
-                {
-                    // Peluang langsung charge dari wait mode (lebih tinggi dari chase mode)
-                    if (Random.value < directChargeChance)
-                    {
-                        if (showChaseDebug) Debug.Log($"Takau: Target detected at charge range! Direct charge attack! Distance: {distanceToTarget:F2}m");
-                        SwitchMoveMode(MoveMode.chargeSearch);
-                        return;
-                    }
-                }
-                
                 if (showChaseDebug) Debug.Log("Takau: Target detected during wait! Switching to chase immediately.");
                 SwitchMoveMode(MoveMode.chase);
                 return;
             }
             
-            // Timer logic hanya jalan jika tidak detect target
-            if(currentTimeWaiting > maxTimeWaiting) 
+            if(currentTimeWaiting > maxTimeWaiting)  // Timer logic hanya jalan jika tidak detect target
             {
-                if (showChaseDebug) Debug.Log("Takau: Wait time finished, entering charge search mode");
+                if (showChaseDebug) Debug.Log("Takau: Wait time finished, ready to hunt again");
                 
-                // Reset hit state jika ada
                 isHit = false;
+                currentTimeWaiting = 0; // Reset wait timer and continue waiting
                 
-                // Masuk ke charge search mode instead of reset timer
-                SwitchMoveMode(MoveMode.chargeSearch);
+                // Note: Charge detection is now handled automatically in FieldOfView()
+                // No need to manually switch to chargeSearch mode
             } 
             else 
             {
@@ -382,41 +213,38 @@ namespace DS
 
         private void ChargeSearching()
         {
-            // Stop movement saat searching
+            // Rotate to scan for targets during charge search
+            transform.Rotate(0, 45f * Time.deltaTime, 0); // Slow rotation while searching
             agent.destination = transform.position;
             agent.speed = 0;
             
-            if (showChargeDebug) 
+            if (showChaseDebug) 
             {
                 Debug.Log($"Takau charge searching... Time: {currentChargeSearchTime:F1}s / {chargeSearchTime:F1}s");
             }
             
-            // Rotate slowly to search for player
-            chargeSearchRotation += chargeSearchRotationSpeed * Time.deltaTime;
-            Vector3 searchDirection = Quaternion.Euler(0, chargeSearchRotation, 0) * Vector3.forward;
-            transform.rotation = Quaternion.LookRotation(searchDirection);
-            
-            // Check if player detected during search
-            if (isDetectTarget && currentTarget != null)
+            // Check for charge target in extended forward vision
+            if (CheckChargeTarget())
             {
-                if (showChargeDebug) Debug.Log("Takau: Target found during charge search! Initiating charge!");
-                
-                // Set charge target to current player position
-                chargeTargetPosition = currentTarget.position;
-                chargeStartPosition = transform.position;
-                
-                // Start charging
-                SwitchMoveMode(MoveMode.charge);
+                if (showChaseDebug) Debug.Log("Takau: Charge target found! Initiating charge!");
+                InitiateCharge();
                 return;
             }
             
-            // Search timeout
+            // Timeout - return to normal behavior
             if (currentChargeSearchTime > chargeSearchTime)
             {
-                if (showChargeDebug) Debug.Log("Takau: Charge search timeout, entering cooldown");
-                SwitchMoveMode(MoveMode.wait);
-                isChargeCooldown = true;
-                currentChargeCooldownTime = 0;
+                if (showChaseDebug) Debug.Log("Takau: Charge search timeout, returning to wait");
+                
+                // If target is in normal vision during search timeout, switch to chase
+                if (isDetectTarget && currentTarget != null)
+                {
+                    SwitchMoveMode(MoveMode.chase);
+                }
+                else
+                {
+                    SwitchMoveMode(MoveMode.wait);
+                }
             }
             else
             {
@@ -426,75 +254,87 @@ namespace DS
         
         private void Charging()
         {
-            if (showChargeDebug) 
-            {
-                float chargeProgress = Vector3.Distance(chargeStartPosition, transform.position);
-                Debug.Log($"Takau charging! Progress: {chargeProgress:F1}m / {chargeDistance:F1}m");
-            }
+            if (!isCharging) return;
             
-            // Set charge speed
             agent.speed = chargeSpeed;
-            
-            // Always move towards the locked target position
             agent.destination = chargeTargetPosition;
             
-            // Face the charge direction
-            Vector3 chargeDirection = (chargeTargetPosition - transform.position).normalized;
-            if (chargeDirection != Vector3.zero)
-            {
-                transform.rotation = Quaternion.LookRotation(chargeDirection);
-            }
+            float distanceToChargeTarget = Vector3.Distance(transform.position, chargeTargetPosition);
             
-            // Check if charge distance reached
-            float distanceTraveled = Vector3.Distance(chargeStartPosition, transform.position);
-            if (distanceTraveled >= chargeDistance)
+            if (showChaseDebug) 
             {
-                if (showChargeDebug) Debug.Log("Takau: Charge distance completed, entering cooldown");
-                SwitchMoveMode(MoveMode.wait);
-                isChargeCooldown = true;
-                currentChargeCooldownTime = 0;
-                return;
+                Debug.Log($"Takau charging! Distance to target: {distanceToChargeTarget:F2}m");
             }
             
             // Check if hit player during charge
             if (currentTarget != null)
             {
                 float distanceToPlayer = Vector3.Distance(transform.position, currentTarget.position);
-                if (distanceToPlayer <= radiusHit)
+                if (distanceToPlayer <= radiusHit && !isHit)
                 {
-                    if (!isHit)
-                    {
-                        Debug.Log("Takau charge attack hit! Game Over!");
-                        isHit = true;
-                        OnPlayerCaught();
-                    }
+                    Debug.Log("Takau hit player during charge - Game Over!");
+                    isHit = true;
+                    OnPlayerCaught();
                     return;
                 }
             }
             
-            // Check if reached destination (charge target position)
-            if (agent.remainingDistance < agent.stoppingDistance)
+            // Stop charge when reached target position or close enough
+            if (distanceToChargeTarget <= 2f)
             {
-                if (showChargeDebug) Debug.Log("Takau: Reached charge target position, entering cooldown");
-                SwitchMoveMode(MoveMode.wait);
-                isChargeCooldown = true;
-                currentChargeCooldownTime = 0;
+                if (showChaseDebug) Debug.Log("Takau: Charge completed, entering cooldown wait");
+                FinishCharge();
             }
         }
-
-        // private void Dying()
-        // {
-        //     // Stop all movement
-        //     agent.isStopped = true;
-        //     agent.velocity = Vector3.zero;
+        
+        private bool CheckChargeTarget()
+        {
+            if (currentTarget == null) return false;
             
-        //     // Disable further AI behavior
-        //     isDetectTarget = false;
+            Vector3 direction = (currentTarget.position - transform.position).normalized;
+            float angleToTarget = Vector3.Angle(transform.forward, direction);
+            float distance = Vector3.Distance(transform.position, currentTarget.position);
             
-        //     // This method handles the death state
-        //     // Could add death timer or destruction logic here
-        //     Debug.Log("Takau is in dying state...");
-        // }
+            // Check if target is in charge forward vision cone
+            bool inChargeVision = angleToTarget < chargeForwardVisionAngle / 2;
+            bool inChargeRange = distance >= chargeMinDistance && distance <= (viewRadius + chargeForwardVisionBonus);
+            bool lineOfSight = !Physics.Raycast(transform.position, direction, distance, ObstacleMask, QueryTriggerInteraction.Ignore);
+            
+            if (showChaseDebug && inChargeVision && inChargeRange)
+            {
+                Debug.Log($"Charge target check: Angle={angleToTarget:F1}°, Distance={distance:F1}m, LOS={lineOfSight}");
+            }
+            
+            return inChargeVision && inChargeRange && lineOfSight;
+        }
+        
+        private void InitiateCharge()
+        {
+            if (currentTarget == null) return;
+            
+            // Set charge target position to player's current position
+            chargeTargetPosition = currentTarget.position;
+            isCharging = true;
+            lastChargeTime = Time.time;
+            
+            if (showChaseDebug) 
+            {
+                Debug.Log($"Charge initiated to position: {chargeTargetPosition}");
+            }
+            
+            SwitchMoveMode(MoveMode.charge);
+        }
+        
+        private void FinishCharge()
+        {
+            isCharging = false;
+            agent.isStopped = true;
+            
+            // Brief pause after charge before returning to normal behavior
+            if (showChaseDebug) Debug.Log("Charge finished, entering extended cooldown");
+            
+            SwitchMoveMode(MoveMode.wait);
+        }
 
         private void SwitchMoveMode (MoveMode _moveMode)
         {
@@ -510,19 +350,16 @@ namespace DS
                     if (showChaseDebug) Debug.Log("Takau: Exiting wait mode");
                     break;
                 case MoveMode.chargeSearch:
-                    if (showChargeDebug) Debug.Log("Takau: Exiting charge search mode");
+                    if (showChaseDebug) Debug.Log("Takau: Exiting charge search mode");
                     break;
                 case MoveMode.charge:
-                    if (showChargeDebug) Debug.Log("Takau: Exiting charge mode");
+                    if (showChaseDebug) Debug.Log("Takau: Exiting charge mode");
                     break;
             }
             
             // Enter new mode
             switch (_moveMode)
             {
-                case MoveMode.attack:
-                    Debug.Log("Takau: Entering Attack Mode");
-                    break;
                 case MoveMode.chase:
                     currentTimeChasing = 0;
                     agent.isStopped = false;
@@ -535,21 +372,13 @@ namespace DS
                     if (showChaseDebug) Debug.Log("Takau: Entering Wait Mode - Scanning...");
                     break;
                 case MoveMode.chargeSearch:
-                    agent.destination = transform.position;
                     currentChargeSearchTime = 0;
-                    chargeSearchRotation = transform.eulerAngles.y; // Start from current rotation
                     agent.isStopped = false;
-                    if (showChargeDebug) Debug.Log("Takau: Entering Charge Search Mode - Looking for target to charge!");
+                    if (showChaseDebug) Debug.Log("Takau: Entering Charge Search Mode - Looking for charge target!");
                     break;
                 case MoveMode.charge:
                     agent.isStopped = false;
-                    isCharging = true;
-                    if (showChargeDebug) Debug.Log($"Takau: Entering Charge Mode - Target locked at {chargeTargetPosition}!");
-                    break;
-                case MoveMode.dying:
-                    agent.destination = transform.position;
-                    agent.isStopped = true;
-                    Debug.Log("Takau is dying...");
+                    if (showChaseDebug) Debug.Log("Takau: Entering Charge Mode - CHARGING!");
                     break;
             }
             
@@ -561,7 +390,6 @@ namespace DS
 
         private void OnTriggerEnter(Collider other)
         {
-            // Jika menyentuh FearShield (bukan langsung Player), mulai mengejar
             if (other.CompareTag("Light"))
             {
                 Debug.Log("Enemy mendeteksi FearShield! Mulai mengejar.");
@@ -571,20 +399,18 @@ namespace DS
 
         private void OnTriggerExit(Collider other)
         {
-            // Jika FearShield keluar dari area deteksi, berhenti mengejar
             if (other.CompareTag("Light"))
             {
                 Debug.Log("FearShield keluar dari jangkauan! Enemy berhenti mengejar.");
-                // agent.ResetPath();
             }
         }
 
         private void FieldOfView()
         {
-            // Extended forward vision: Check larger radius for targets in front
             float extendedRadius = viewRadius + forwardVisionBonus;
+            float chargeExtendedRadius = viewRadius + chargeForwardVisionBonus;
             
-            Collider[] range = Physics.OverlapSphere(transform.position, extendedRadius, TargetMask, QueryTriggerInteraction.Ignore);
+            Collider[] range = Physics.OverlapSphere(transform.position, Mathf.Max(extendedRadius, chargeExtendedRadius), TargetMask, QueryTriggerInteraction.Ignore);
 
             if(range.Length > 0) {
 
@@ -594,63 +420,94 @@ namespace DS
                 float angleToTarget = Vector3.Angle(transform.forward, direction);
                 float distance = Vector3.Distance(transform.position, currentTarget.position);
 
-                // Enhanced FOV logic with extended forward vision
+                // Check charge detection first (higher priority)
+                bool inChargeVision = angleToTarget < chargeForwardVisionAngle / 2;
+                bool inChargeRange = distance >= chargeMinDistance && distance <= chargeExtendedRadius;
+                bool chargeLineOfSight = !Physics.Raycast(transform.position, direction, distance, ObstacleMask, QueryTriggerInteraction.Ignore);
+                
+                // Check if charge is available (cooldown finished)
+                float timeSinceLastCharge = Time.time - lastChargeTime;
+                bool chargeReady = timeSinceLastCharge >= chargeCooldown;
+                
+                // CHARGE DETECTION (highest priority if charge is ready and not already charging)
+                if (chargeReady && inChargeVision && inChargeRange && chargeLineOfSight && moveMode != MoveMode.charge && moveMode != MoveMode.chargeSearch)
+                {
+                    if (showChaseDebug) 
+                    {
+                        Debug.Log($"CHARGE: Target detected in charge vision! Angle={angleToTarget:F1}°, Distance={distance:F1}m - INITIATING CHARGE!");
+                    }
+                    
+                    // Directly initiate charge without search phase
+                    chargeTargetPosition = currentTarget.position;
+                    isCharging = true;
+                    lastChargeTime = Time.time;
+                    SwitchMoveMode(MoveMode.charge);
+                    isDetectTarget = false; // Disable normal detection during charge
+                    return;
+                }
+
                 bool isInFOV = false;
                 float effectiveViewRadius = viewRadius;
                 
-                // Check if target is in forward extended vision cone
-                if (angleToTarget < forwardVisionAngle / 2)
+                // Normal chase detection (not during charge modes)
+                if (moveMode != MoveMode.charge && moveMode != MoveMode.chargeSearch)
                 {
-                    // Target is in front - use extended radius
-                    effectiveViewRadius = extendedRadius;
-                    isInFOV = true;
-                    if (showChaseDebug) Debug.Log($"FOV: Target in EXTENDED forward vision (angle: {angleToTarget:F1}°, dist: {distance:F1}m)");
-                }
-                else if (angleToTarget < viewAngle / 2)
-                {
-                    // Target is in normal FOV but not in forward cone - use normal radius
-                    effectiveViewRadius = viewRadius;
-                    isInFOV = (distance <= viewRadius);
-                    if (showChaseDebug) Debug.Log($"FOV: Target in normal vision (angle: {angleToTarget:F1}°, dist: {distance:F1}m)");
-                }
-                
-                // Check if target is within effective range and FOV
-                if (isInFOV && distance <= effectiveViewRadius) {
+                    // Check if target is in forward extended vision cone (for chase)
+                    if (angleToTarget < forwardVisionAngle / 2)
+                    {
+                        effectiveViewRadius = extendedRadius;
+                        isInFOV = true;
+                        if (showChaseDebug) Debug.Log($"FOV: Target in EXTENDED forward vision (angle: {angleToTarget:F1}°, dist: {distance:F1}m)");
+                    }
+                    else if (angleToTarget < viewAngle / 2)
+                    {
+                        effectiveViewRadius = viewRadius;
+                        isInFOV = (distance <= viewRadius);
+                        if (showChaseDebug) Debug.Log($"FOV: Target in normal vision (angle: {angleToTarget:F1}°, dist: {distance:F1}m)");
+                    }
                     
-                    // Line of sight check
-                    if(!Physics.Raycast(transform.position, direction, distance, ObstacleMask, QueryTriggerInteraction.Ignore)) {
-                        isDetectTarget = true;
+                    // Process detection for chase modes
+                    if (isInFOV && distance <= effectiveViewRadius) {
+                        
+                        if(!Physics.Raycast(transform.position, direction, distance, ObstacleMask, QueryTriggerInteraction.Ignore)) {
+                            isDetectTarget = true;
 
-                        // Mode-specific detection handling
-                        if(moveMode == MoveMode.wait) {
-                            // Wait mode: detection akan dihandle oleh Waiting() method
-                            if (showChaseDebug) Debug.Log($"FOV: Target detected in wait mode at {distance:F1}m - let Waiting() handle it");
-                        }
-                        else if(moveMode != MoveMode.chase && moveMode != MoveMode.dying) {
-                            // Other modes: switch to chase immediately
-                            if (showChaseDebug) Debug.Log($"FOV: Target detected at {distance:F1}m, switching to chase");
-                            SwitchMoveMode(MoveMode.chase);
+                            if(moveMode == MoveMode.wait) {
+                                if (showChaseDebug) Debug.Log($"FOV: Target detected in wait mode at {distance:F1}m - let Waiting() handle it");
+                            }
+                            else if(moveMode == MoveMode.chase) {
+                                // Already in chase, continue
+                            }
+                            else {
+                                if (showChaseDebug) Debug.Log($"FOV: Target detected at {distance:F1}m, switching to chase");
+                                SwitchMoveMode(MoveMode.chase);
+                            }
+                        } else {
+                            isDetectTarget = false;
+                            if (showChaseDebug && range.Length > 0) Debug.Log("FOV: Target blocked by obstacle");
                         }
                     } else {
                         isDetectTarget = false;
-                        if (showChaseDebug && range.Length > 0) Debug.Log("FOV: Target blocked by obstacle");
-                    }
-                } else {
-                    isDetectTarget = false;
-                    if (showChaseDebug && range.Length > 0) {
-                        if (!isInFOV) {
-                            Debug.Log($"FOV: Target outside view angle ({angleToTarget:F1}° > {viewAngle/2:F1}°)");
-                        } else {
-                            Debug.Log($"FOV: Target too far ({distance:F1}m > {effectiveViewRadius:F1}m)");
+                        if (showChaseDebug && range.Length > 0) {
+                            if (!isInFOV) {
+                                Debug.Log($"FOV: Target outside view angle ({angleToTarget:F1}° > {viewAngle/2:F1}°)");
+                            } else {
+                                Debug.Log($"FOV: Target too far ({distance:F1}m > {effectiveViewRadius:F1}m)");
+                            }
                         }
                     }
+                }
+                else
+                {
+                    // During charge modes, disable normal detection to prevent interference
+                    isDetectTarget = false;
                 }
             } else {
                 isDetectTarget = false;
                 currentTarget = null;
             }
         }
-
+#if UNITY_EDITOR
         private void OnDrawGizmos()
         {
             if(agent == null) return;
@@ -667,10 +524,6 @@ namespace DS
             Gizmos.color = isDetectTarget ? new Color(0f, 1f, 0f, 0.3f) : new Color(0f, 0f, 1f, 0.3f);
             Gizmos.DrawWireSphere(transform.position, viewRadius + forwardVisionBonus);
             
-            // Attack range
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, attackRange);
-            
             // Hit radius (game over zone)
             Gizmos.color = isHit ? Color.red : Color.magenta;
             Gizmos.DrawWireSphere(transform.position, radiusHit);
@@ -682,40 +535,6 @@ namespace DS
             // Min chase distance
             Gizmos.color = new Color(1f, 0.5f, 0f); // Orange color
             Gizmos.DrawWireSphere(transform.position, minChaseDistance);
-            
-            // Charge system visualization
-            if (showChargeDebug)
-            {
-                // Charge minimum distance (inner ring)
-                Gizmos.color = new Color(1f, 1f, 0f, 0.3f); // Yellow with transparency
-                Gizmos.DrawWireSphere(transform.position, chargeMinDistance);
-                
-                // Charge maximum distance (outer ring)
-                Gizmos.color = new Color(1f, 0f, 1f, 0.4f); // Purple for charge range
-                Gizmos.DrawWireSphere(transform.position, chargeDistance);
-                
-                // Charge active state visualization
-                if (moveMode == MoveMode.charge || moveMode == MoveMode.chargeSearch)
-                {
-                    Gizmos.color = Color.magenta;
-                    Gizmos.DrawWireSphere(transform.position, chargeDistance);
-                    
-                    // Show charge target if in charge mode
-                    if (moveMode == MoveMode.charge)
-                    {
-                        Gizmos.color = Color.red;
-                        Gizmos.DrawSphere(chargeTargetPosition, 0.5f);
-                        Gizmos.DrawLine(transform.position, chargeTargetPosition);
-                    }
-                }
-                
-                // Charge cooldown visualization
-                if (isChargeCooldown)
-                {
-                    Gizmos.color = new Color(0.5f, 0.5f, 0.5f, 0.5f); // Gray for cooldown
-                    Gizmos.DrawWireCube(transform.position + Vector3.up * 3f, Vector3.one * 0.5f);
-                }
-            }
 
             // Line to target with different colors based on mode
             if(currentTarget != null && isDetectTarget)
@@ -727,12 +546,6 @@ namespace DS
                         break;
                     case MoveMode.wait:
                         Gizmos.color = Color.yellow;
-                        break;
-                    case MoveMode.chargeSearch:
-                        Gizmos.color = Color.magenta;
-                        break;
-                    case MoveMode.charge:
-                        Gizmos.color = Color.cyan;
                         break;
                     default:
                         Gizmos.color = Color.green;
@@ -748,21 +561,8 @@ namespace DS
                 UnityEditor.Handles.Label(midPoint, $"{dist:F1}m");
                 #endif
             }
-            
-            // Enhanced charge progress visualization
-            if (moveMode == MoveMode.charge && chargeStartPosition != Vector3.zero)
-            {
-                Gizmos.color = Color.green;
-                Gizmos.DrawLine(chargeStartPosition, transform.position);
-                
-                #if UNITY_EDITOR
-                float chargeProgress = Vector3.Distance(chargeStartPosition, transform.position);
-                Vector3 chargeMidPoint = (chargeStartPosition + transform.position) / 2;
-                UnityEditor.Handles.Label(chargeMidPoint, $"Charge: {chargeProgress:F1}m/{chargeDistance:F1}m");
-                #endif
-            }
 
-            // Normal Field of view visualization
+            // Normal Field of view visualization (CHASE VISION)
             float halfFov = viewAngle / 2f;
             Quaternion leftRayRotation = Quaternion.AngleAxis(-halfFov, Vector3.up);
             Quaternion rightRayRotation = Quaternion.AngleAxis(halfFov, Vector3.up);
@@ -773,7 +573,13 @@ namespace DS
             Gizmos.DrawRay(transform.position, leftRayDirection * viewRadius);
             Gizmos.DrawRay(transform.position, rightRayDirection * viewRadius);
             
-            // Extended forward vision cone
+            #if UNITY_EDITOR
+            // Label for normal vision
+            Vector3 normalVisionLabel = transform.position + transform.forward * viewRadius;
+            UnityEditor.Handles.Label(normalVisionLabel, $"Normal Vision: {viewRadius:F1}m / {viewAngle}°");
+            #endif
+            
+            // Extended forward vision cone (CHASE EXTENDED VISION)
             float halfForwardFov = forwardVisionAngle / 2f;
             Quaternion leftForwardRotation = Quaternion.AngleAxis(-halfForwardFov, Vector3.up);
             Quaternion rightForwardRotation = Quaternion.AngleAxis(halfForwardFov, Vector3.up);
@@ -783,6 +589,67 @@ namespace DS
             Gizmos.color = isDetectTarget ? new Color(1f, 0f, 0f, 0.7f) : new Color(1f, 1f, 1f, 0.7f);
             Gizmos.DrawRay(transform.position, leftForwardDirection * (viewRadius + forwardVisionBonus));
             Gizmos.DrawRay(transform.position, rightForwardDirection * (viewRadius + forwardVisionBonus));
+            
+            #if UNITY_EDITOR
+            // Label for extended chase vision
+            Vector3 extendedVisionLabel = transform.position + transform.forward * (viewRadius + forwardVisionBonus);
+            UnityEditor.Handles.Label(extendedVisionLabel, $"Extended Chase: {viewRadius + forwardVisionBonus:F1}m / {forwardVisionAngle}°");
+            #endif
+            
+            // Charge vision cone (always visible for debugging)
+            float halfChargeFov = chargeForwardVisionAngle / 2f;
+            Quaternion leftChargeRotation = Quaternion.AngleAxis(-halfChargeFov, Vector3.up);
+            Quaternion rightChargeRotation = Quaternion.AngleAxis(halfChargeFov, Vector3.up);
+            Vector3 leftChargeDirection = leftChargeRotation * transform.forward;
+            Vector3 rightChargeDirection = rightChargeRotation * transform.forward;
+            
+            // Use different colors based on mode
+            if (moveMode == MoveMode.chargeSearch || moveMode == MoveMode.charge)
+            {
+                Gizmos.color = new Color(0.5f, 0f, 1f); // Bright purple when active
+            }
+            else
+            {
+                Gizmos.color = new Color(0.5f, 0f, 1f, 0.4f); // Transparent purple when inactive
+            }
+            
+            float chargeRange = viewRadius + chargeForwardVisionBonus;
+            Gizmos.DrawRay(transform.position, leftChargeDirection * chargeRange);
+            Gizmos.DrawRay(transform.position, rightChargeDirection * chargeRange);
+            
+            // Charge extended range sphere
+            Gizmos.color = new Color(0.5f, 0f, 1f, 0.2f);
+            Gizmos.DrawWireSphere(transform.position, chargeRange);
+            
+            #if UNITY_EDITOR
+            // Label for charge range
+            Vector3 chargeLabelPos = transform.position + transform.forward * chargeRange;
+            UnityEditor.Handles.Label(chargeLabelPos, $"Charge Range: {chargeRange:F1}m");
+            
+            // Label for charge angle
+            Vector3 angleLabel = transform.position + transform.forward * (chargeRange * 0.7f);
+            UnityEditor.Handles.Label(angleLabel, $"Charge Angle: {chargeForwardVisionAngle}°");
+            #endif
+            
+            // Charge min distance circle
+            Gizmos.color = new Color(0.5f, 0f, 0.5f, 0.3f);
+            Gizmos.DrawWireSphere(transform.position, chargeMinDistance);
+            
+            // Charge target position
+            if (isCharging && moveMode == MoveMode.charge)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(chargeTargetPosition, 1f);
+                Gizmos.DrawLine(transform.position, chargeTargetPosition);
+                
+                #if UNITY_EDITOR
+                UnityEditor.Handles.Label(chargeTargetPosition, "CHARGE TARGET");
+                #endif
+            }
+            
+            // Draw forward vision arc
+            Gizmos.color = isDetectTarget ? new Color(1f, 0f, 0f, 0.2f) : new Color(1f, 1f, 0f, 0.2f);
+            Vector3 arcCenter = transform.position + transform.forward * (viewRadius + forwardVisionBonus * 0.5f);
             
             // Agent path visualization
             if (agent.hasPath)
@@ -795,19 +662,16 @@ namespace DS
                 }
             }
         }
-
-        // Debug helper method untuk monitoring Takau state
         private void OnGUI()
         {
-            if (!showChaseDebug && !showChargeDebug) return;
+            if (!showChaseDebug) return;
             
-            GUILayout.BeginArea(new Rect(10, 10, 400, 380));
+            GUILayout.BeginArea(new Rect(10, 10, 380, 300));
             GUILayout.Label("=== TAKAU AI DEBUG ===");
             GUILayout.Label($"Mode: {moveMode}");
             GUILayout.Label($"Target: {(currentTarget ? currentTarget.name : "None")}");
             GUILayout.Label($"Detect Target: {isDetectTarget}");
             GUILayout.Label($"Is Hit: {isHit}");
-            GUILayout.Label($"Health: {currentHealth}/{maxHealth}");
             
             if (currentTarget != null)
             {
@@ -833,30 +697,23 @@ namespace DS
                 // Obstacle check
                 bool blocked = Physics.Raycast(transform.position, direction, dist, ObstacleMask);
                 GUILayout.Label($"Line of Sight: {(blocked ? "BLOCKED" : "CLEAR")}");
+                
+                // Charge vision check with real-time status
+                bool inChargeFOV = angle < chargeForwardVisionAngle / 2;
+                bool inChargeRange = dist >= chargeMinDistance && dist <= (viewRadius + chargeForwardVisionBonus);
+                float timeSinceLastCharge = Time.time - lastChargeTime;
+                bool chargeReady = timeSinceLastCharge >= chargeCooldown;
+                bool chargeConditionsMet = chargeReady && inChargeFOV && inChargeRange && !blocked;
+                
+                GUILayout.Label($"=== CHARGE STATUS ===");
+                GUILayout.Label($"In Charge FOV ({chargeForwardVisionAngle}°): {inChargeFOV}");
+                GUILayout.Label($"In Charge Range ({chargeMinDistance:F1}m-{viewRadius + chargeForwardVisionBonus:F1}m): {inChargeRange}");
+                GUILayout.Label($"Charge Ready: {(chargeReady ? "YES" : $"NO ({chargeCooldown - timeSinceLastCharge:F1}s)")}");
+                GUILayout.Label($"ALL CHARGE CONDITIONS MET: {(chargeConditionsMet ? "YES - READY TO CHARGE!" : "NO")}");
             }
             
             GUILayout.Label($"Chase Time: {currentTimeChasing:F1}s");
             GUILayout.Label($"Wait Time: {currentTimeWaiting:F1}s");
-            
-            // Charge system info
-            GUILayout.Label("--- CHARGE SYSTEM ---");
-            GUILayout.Label($"Is Charging: {isCharging}");
-            GUILayout.Label($"Charge Cooldown: {isChargeCooldown}");
-            GUILayout.Label($"Charge Search Time: {currentChargeSearchTime:F1}s");
-            GUILayout.Label($"Charge Cooldown Time: {currentChargeCooldownTime:F1}s");
-            GUILayout.Label($"Charge Speed: {chargeSpeed}");
-            GUILayout.Label($"Charge Distance: {chargeDistance}m");
-            GUILayout.Label($"Charge Min Distance: {chargeMinDistance}m");
-            GUILayout.Label($"Direct Charge Chance: {directChargeChance * 100:F0}%");
-            GUILayout.Label($"Chase Charge Chance: {chargeChancePerSecond * 100:F0}%/s");
-            
-            if (moveMode == MoveMode.charge && chargeStartPosition != Vector3.zero)
-            {
-                float chargeProgress = Vector3.Distance(chargeStartPosition, transform.position);
-                GUILayout.Label($"Charge Progress: {chargeProgress:F1}m / {chargeDistance:F1}m");
-                GUILayout.Label($"Charge Target: {chargeTargetPosition}");
-            }
-            
             GUILayout.Label($"Agent Speed: {agent.velocity.magnitude:F2}");
             GUILayout.Label($"Custom Rotation: {useCustomRotation}");
             GUILayout.Label($"Rotation Speed: {rotationSpeed}°/s");
@@ -865,83 +722,74 @@ namespace DS
             switch(moveMode)
             {
                 case MoveMode.wait:
-                    string waitStatus = isChargeCooldown ? "COOLDOWN" : (isDetectTarget ? "READY TO CHASE" : "SCANNING...");
-                    GUILayout.Label($"Wait Status: {waitStatus}");
+                    GUILayout.Label($"Wait Status: {(isDetectTarget ? "READY TO CHASE" : "SCANNING...")}");
+                    float timeSinceLastCharge = Time.time - lastChargeTime;
+                    bool chargeReady = timeSinceLastCharge >= chargeCooldown;
+                    GUILayout.Label($"Charge Ready: {(chargeReady ? "YES" : $"NO ({chargeCooldown - timeSinceLastCharge:F1}s)")}");
                     break;
                 case MoveMode.chase:
                     GUILayout.Label($"Chase Status: HUNTING");
                     break;
                 case MoveMode.chargeSearch:
-                    GUILayout.Label($"Charge Search: LOOKING FOR TARGET");
+                    GUILayout.Label($"Charge Search: {currentChargeSearchTime:F1}s / {chargeSearchTime:F1}s");
+                    if (currentTarget != null)
+                    {
+                        bool chargeTargetValid = CheckChargeTarget();
+                        GUILayout.Label($"Charge Target Valid: {chargeTargetValid}");
+                    }
                     break;
                 case MoveMode.charge:
-                    GUILayout.Label($"Charge Status: CHARGING!");
+                    GUILayout.Label($"CHARGING!");
+                    if (isCharging)
+                    {
+                        float distToChargeTarget = Vector3.Distance(transform.position, chargeTargetPosition);
+                        GUILayout.Label($"Dist to Charge Target: {distToChargeTarget:F1}m");
+                    }
                     break;
             }
             
             GUILayout.EndArea();
         }
-
-        // public void TakeDamage(float damage)
-        // {
-        //     if (moveMode == MoveMode.dying) return;
-            
-        //     currentHealth -= damage;
-        //     Debug.Log($"Takau took {damage} damage. Health: {currentHealth}/{maxHealth}");
-            
-        //     if (currentHealth <= 0)
-        //     {
-        //         currentHealth = 0;
-        //         SwitchMoveMode(MoveMode.dying);
-        //     }
-        // }
-    
-        // public bool IsDead()
-        // {
-        //     return currentHealth <= 0;
-        // }
-
+#endif
         private void HandleRotation()
         {
             if (!useCustomRotation) return;
             
-            // Special handling for charge search mode
-            if (moveMode == MoveMode.chargeSearch)
-            {
-                // Rotation is handled in ChargeSearching() method
-                return;
-            }
+            Vector3 direction = Vector3.zero;
             
-            // Special handling for charge mode
-            if (moveMode == MoveMode.charge)
-            {
-                // Rotation is handled in Charging() method
-                return;
-            }
-            
-            // Different rotation behavior based on mode
             if (moveMode == MoveMode.wait)
             {
-                // In wait mode, only rotate if we actually detect the target
                 if (!isDetectTarget || currentTarget == null) return;
+                direction = (currentTarget.position - transform.position).normalized;
+            }
+            else if (moveMode == MoveMode.chase)
+            {
+                if (currentTarget == null) return;
+                direction = (currentTarget.position - transform.position).normalized;
+            }
+            else if (moveMode == MoveMode.chargeSearch)
+            {
+                // Let the rotation in ChargeSearching() method handle this
+                return;
+            }
+            else if (moveMode == MoveMode.charge)
+            {
+                if (!isCharging) return;
+                direction = (chargeTargetPosition - transform.position).normalized;
             }
             else
             {
-                // In other modes, rotate if we have a target (even if not in FOV)
-                if (currentTarget == null) return;
+                return;
             }
             
-            Vector3 direction = (currentTarget.position - transform.position).normalized;
             direction.y = 0; // Keep rotation only on Y-axis
             
             if (direction != Vector3.zero)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(direction);
                 
-                // Smooth rotation based on mode
                 float currentRotationSpeed = rotationSpeed;
-                
-                // Faster rotation when chasing for more aggressive feel
+    
                 if (moveMode == MoveMode.chase)
                 {
                     currentRotationSpeed = rotationSpeed * 1.5f; // 50% faster rotation when chasing
@@ -949,6 +797,10 @@ namespace DS
                 else if (moveMode == MoveMode.wait)
                 {
                     currentRotationSpeed = rotationSpeed * 0.8f; // Slower rotation when waiting (more cautious)
+                }
+                else if (moveMode == MoveMode.charge)
+                {
+                    currentRotationSpeed = rotationSpeed * 2f; // Very fast rotation when charging
                 }
                 
                 transform.rotation = Quaternion.RotateTowards(
