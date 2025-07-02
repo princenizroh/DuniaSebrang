@@ -31,14 +31,11 @@ public class CameraManager : MonoBehaviour
 
         if (cameraIndex == currentCamIndex)
         {
-            // Sudah pakai kamera yang ini
             return;
         }
 
-        // Matikan kamera saat ini
         currentCam.enabled = false;
 
-        // Aktifkan kamera baru
         currentCam = cameras[cameraIndex];
         currentCam.enabled = true;
         currentCamIndex = cameraIndex;
