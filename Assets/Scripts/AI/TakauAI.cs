@@ -15,6 +15,16 @@ namespace DS
         [field: SerializeField] public float maxTimeWaiting { get; private set; } = 3f;
         [field: SerializeField] public float radiusHit { get; private set; } = 1.5f;
         
+        [field: Header("=== ACCELERATION SETTINGS ===")]
+        [Tooltip("Kecepatan awal saat mulai chase (akan naik ke chaseSpeed)")]
+        [field: SerializeField] public float chaseStartSpeed { get; private set; } = 1f;
+        [Tooltip("Waktu untuk mencapai kecepatan penuh saat chase")]
+        [field: SerializeField] public float chaseAccelerationTime { get; private set; } = 2f;
+        [Tooltip("Kecepatan awal saat mulai charge (akan naik ke chargeSpeed)")]
+        [field: SerializeField] public float chargeStartSpeed { get; private set; } = 15f;
+        [Tooltip("Waktu untuk mencapai kecepatan penuh saat charge")]
+        [field: SerializeField] public float chargeAccelerationTime { get; private set; } = 0.8f;
+        
         [field: Header("=== CHASE BEHAVIOR ===")]
         [field: SerializeField] public float loseTargetDistance { get; private set; } = 15f;
         [field: SerializeField] public float minChaseDistance { get; private set; } = 5f;
@@ -61,6 +71,11 @@ namespace DS
         [field: SerializeField] private float currentChargeSearchTime, lastChargeTime;
         [field: SerializeField] private Vector3 chargeTargetPosition;
         [field: SerializeField] private bool isCharging;
+        
+        // Acceleration runtime variables
+        [field: SerializeField] private float currentChaseAccelTime;
+        [field: SerializeField] private float currentChargeAccelTime;
+        [field: SerializeField] private float currentEffectiveSpeed;
 
         private void Awake()
         {
@@ -146,9 +161,15 @@ namespace DS
             
             float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
             
+            // ACCELERATION SYSTEM untuk Chase
+            currentChaseAccelTime += Time.deltaTime;
+            float accelProgress = Mathf.Clamp01(currentChaseAccelTime / chaseAccelerationTime);
+            float acceleratedSpeed = Mathf.Lerp(chaseStartSpeed, chaseSpeed, accelProgress);
+            currentEffectiveSpeed = acceleratedSpeed;
+            
             if (showChaseDebug) 
             {
-                Debug.Log($"Takau chasing: Distance to target = {distanceToTarget:F2}m");
+                Debug.Log($"Takau chasing: Distance = {distanceToTarget:F2}m, Speed = {currentEffectiveSpeed:F1}m/s ({accelProgress*100:F0}% accel)");
             }
             
             if (distanceToTarget > loseTargetDistance) // Jika target terlalu jauh, hentikan chase
@@ -167,13 +188,15 @@ namespace DS
                     OnPlayerCaught(); // Trigger game over logic atau damage player
                 }
                 return;
-            }            
-            agent.speed = chaseSpeed; // Set chase speed and destination
+            }
+            
+            // Apply accelerated speed
+            agent.speed = currentEffectiveSpeed;
             
             if (distanceToTarget <= minChaseDistance)  // Jika sudah dekat tapi belum hit, perlambat untuk lebih menakutkan
             {
-                agent.speed = chaseSpeed * 0.7f; // Perlambat 30%
-                if (showChaseDebug) Debug.Log("Takau: Close to target, slowing down");
+                agent.speed = currentEffectiveSpeed * 0.7f; // Perlambat 30% dari speed saat ini
+                if (showChaseDebug) Debug.Log($"Takau: Close to target, slowing down to {agent.speed:F1}m/s");
             }
             
             agent.destination = currentTarget.position; // Set destination (NavMesh will handle pathfinding)
@@ -300,14 +323,20 @@ namespace DS
         {
             if (!isCharging) return;
             
-            agent.speed = chargeSpeed;
+            // ACCELERATION SYSTEM untuk Charge
+            currentChargeAccelTime += Time.deltaTime;
+            float accelProgress = Mathf.Clamp01(currentChargeAccelTime / chargeAccelerationTime);
+            float acceleratedChargeSpeed = Mathf.Lerp(chargeStartSpeed, chargeSpeed, accelProgress);
+            currentEffectiveSpeed = acceleratedChargeSpeed;
+            
+            agent.speed = currentEffectiveSpeed;
             agent.destination = chargeTargetPosition;
             
             float distanceToChargeTarget = Vector3.Distance(transform.position, chargeTargetPosition);
             
             if (showChaseDebug) 
             {
-                Debug.Log($"Takau charging! Distance to target: {distanceToChargeTarget:F2}m");
+                Debug.Log($"Takau charging! Distance: {distanceToChargeTarget:F2}m, Speed: {currentEffectiveSpeed:F1}m/s ({accelProgress*100:F0}% accel)");
             }
             
             // Check if hit player during charge
@@ -427,22 +456,28 @@ namespace DS
             {
                 case MoveMode.chase:
                     currentTimeChasing = 0;
+                    currentChaseAccelTime = 0; // Reset chase acceleration timer
+                    currentEffectiveSpeed = chaseStartSpeed; // Start with chase start speed
                     agent.isStopped = false;
                     if (showChaseDebug) Debug.Log("Takau: Entering Chase Mode - HUNTING!");
                     break;
                 case MoveMode.wait:
                     agent.destination = transform.position;
                     currentTimeWaiting = 0;
+                    currentEffectiveSpeed = 0; // No movement during wait
                     agent.isStopped = false;
                     if (showChaseDebug) Debug.Log("Takau: Entering Wait Mode - Scanning...");
                     break;
                 case MoveMode.chargeSearch:
                     currentChargeSearchTime = 0;
                     currentChargeSearchVisionBonus = chargeSearchVisionBonusStart; // Reset to starting value
+                    currentEffectiveSpeed = 0; // No movement during search
                     agent.isStopped = false;
                     if (showChaseDebug) Debug.Log("Takau: Entering Charge Search Mode - Looking for charge target!");
                     break;
                 case MoveMode.charge:
+                    currentChargeAccelTime = 0; // Reset charge acceleration timer
+                    currentEffectiveSpeed = chargeStartSpeed; // Start with charge start speed
                     agent.isStopped = false;
                     if (showChaseDebug) Debug.Log("Takau: Entering Charge Mode - CHARGING!");
                     break;
@@ -916,6 +951,20 @@ namespace DS
                 UnityEditor.Handles.Label(comparisonPos, $"SEARCH MODE: {chargeSearchRange:F1}m vs Normal: {chargeRange:F1}m");
                 UnityEditor.Handles.Label(comparisonPos + Vector3.up * 0.5f, $"Extended by: +{currentChargeSearchVisionBonus - chargeForwardVisionBonus:F1}m");
             }
+            else if (moveMode == MoveMode.chase && Application.isPlaying)
+            {
+                // CHASE MODE: Show acceleration info
+                float chaseAccelProgress = Mathf.Clamp01(currentChaseAccelTime / chaseAccelerationTime);
+                UnityEditor.Handles.Label(comparisonPos, $"CHASE MODE: Speed {currentEffectiveSpeed:F1}m/s ({chaseAccelProgress*100:F0}% accel)");
+                UnityEditor.Handles.Label(comparisonPos + Vector3.up * 0.5f, $"Acceleration: {chaseStartSpeed:F1} → {chaseSpeed:F1} m/s");
+            }
+            else if (moveMode == MoveMode.charge && Application.isPlaying)
+            {
+                // CHARGE MODE: Show acceleration info
+                float chargeAccelProgress = Mathf.Clamp01(currentChargeAccelTime / chargeAccelerationTime);
+                UnityEditor.Handles.Label(comparisonPos, $"CHARGE MODE: Speed {currentEffectiveSpeed:F1}m/s ({chargeAccelProgress*100:F0}% accel)");
+                UnityEditor.Handles.Label(comparisonPos + Vector3.up * 0.5f, $"Acceleration: {chargeStartSpeed:F1} → {chargeSpeed:F1} m/s");
+            }
             else if (!Application.isPlaying)
             {
                 // EDITOR MODE: Show setup info
@@ -1090,8 +1139,28 @@ namespace DS
             GUILayout.Label($"Chase Time: {currentTimeChasing:F1}s");
             GUILayout.Label($"Wait Time: {currentTimeWaiting:F1}s");
             GUILayout.Label($"Agent Speed: {agent.velocity.magnitude:F2}");
+            GUILayout.Label($"Effective Speed: {currentEffectiveSpeed:F1}m/s");
             GUILayout.Label($"Custom Rotation: {useCustomRotation}");
             GUILayout.Label($"Rotation Speed: {rotationSpeed}°/s");
+            
+            // ACCELERATION DEBUG
+            GUILayout.Label("=== ACCELERATION ===");
+            if (moveMode == MoveMode.chase)
+            {
+                float chaseAccelProgress = Mathf.Clamp01(currentChaseAccelTime / chaseAccelerationTime);
+                GUILayout.Label($"Chase Accel: {chaseAccelProgress*100:F0}% ({currentChaseAccelTime:F1}s/{chaseAccelerationTime:F1}s)");
+                GUILayout.Label($"Speed: {chaseStartSpeed:F1} → {chaseSpeed:F1} m/s (Current: {currentEffectiveSpeed:F1})");
+            }
+            else if (moveMode == MoveMode.charge)
+            {
+                float chargeAccelProgress = Mathf.Clamp01(currentChargeAccelTime / chargeAccelerationTime);
+                GUILayout.Label($"Charge Accel: {chargeAccelProgress*100:F0}% ({currentChargeAccelTime:F1}s/{chargeAccelerationTime:F1}s)");
+                GUILayout.Label($"Speed: {chargeStartSpeed:F1} → {chargeSpeed:F1} m/s (Current: {currentEffectiveSpeed:F1})");
+            }
+            else
+            {
+                GUILayout.Label($"No acceleration (Mode: {moveMode})");
+            }
             
             // Mode-specific info
             switch(moveMode)
@@ -1104,6 +1173,9 @@ namespace DS
                     break;
                 case MoveMode.chase:
                     GUILayout.Label($"Chase Status: HUNTING");
+                    float chaseAccelProgress = Mathf.Clamp01(currentChaseAccelTime / chaseAccelerationTime);
+                    GUILayout.Label($"Chase Acceleration: {chaseAccelProgress*100:F0}%");
+                    GUILayout.Label($"Speed Progression: {chaseStartSpeed:F1} → {currentEffectiveSpeed:F1} → {chaseSpeed:F1} m/s");
                     break;
                 case MoveMode.chargeSearch:
                     float searchProgress = currentChargeSearchTime / chargeSearchTime;
@@ -1120,6 +1192,9 @@ namespace DS
                     break;
                 case MoveMode.charge:
                     GUILayout.Label($"CHARGING!");
+                    float chargeAccelProgress = Mathf.Clamp01(currentChargeAccelTime / chargeAccelerationTime);
+                    GUILayout.Label($"Charge Acceleration: {chargeAccelProgress*100:F0}%");
+                    GUILayout.Label($"Speed Progression: {chargeStartSpeed:F1} → {currentEffectiveSpeed:F1} → {chargeSpeed:F1} m/s");
                     if (isCharging)
                     {
                         float distToChargeTarget = Vector3.Distance(transform.position, chargeTargetPosition);
@@ -1170,6 +1245,76 @@ namespace DS
             else
             {
                 GUILayout.Label("✅ Values OK");
+            }
+            
+            GUILayout.EndArea();
+            
+            // ACCELERATION TESTING BUTTONS
+            GUILayout.BeginArea(new Rect(650, 10, 220, 300));
+            GUILayout.Label("=== ACCELERATION TEST ===");
+            
+            if (GUILayout.Button("Test Chase Mode"))
+            {
+                if (currentTarget != null)
+                {
+                    SwitchMoveMode(MoveMode.chase);
+                    Debug.Log("Manually switched to Chase mode for acceleration testing!");
+                }
+                else
+                {
+                    Debug.LogWarning("No target found - can't test chase mode!");
+                }
+            }
+            
+            if (GUILayout.Button("Test Charge Mode"))
+            {
+                if (currentTarget != null)
+                {
+                    chargeTargetPosition = currentTarget.position;
+                    isCharging = true;
+                    lastChargeTime = Time.time;
+                    SwitchMoveMode(MoveMode.charge);
+                    Debug.Log("Manually switched to Charge mode for acceleration testing!");
+                }
+                else
+                {
+                    Debug.LogWarning("No target found - can't test charge mode!");
+                }
+            }
+            
+            if (GUILayout.Button("Reset Acceleration"))
+            {
+                currentChaseAccelTime = 0;
+                currentChargeAccelTime = 0;
+                currentEffectiveSpeed = 0;
+                Debug.Log("Acceleration timers reset!");
+            }
+            
+            GUILayout.Label("=== ACCEL VALUES ===");
+            GUILayout.Label($"Chase Settings:");
+            GUILayout.Label($"  Start: {chaseStartSpeed:F1}m/s");
+            GUILayout.Label($"  Max: {chaseSpeed:F1}m/s");
+            GUILayout.Label($"  Time: {chaseAccelerationTime:F1}s");
+            
+            GUILayout.Label($"Charge Settings:");
+            GUILayout.Label($"  Start: {chargeStartSpeed:F1}m/s");
+            GUILayout.Label($"  Max: {chargeSpeed:F1}m/s");
+            GUILayout.Label($"  Time: {chargeAccelerationTime:F1}s");
+            
+            GUILayout.Label($"Current Runtime:");
+            GUILayout.Label($"  Effective Speed: {currentEffectiveSpeed:F1}m/s");
+            GUILayout.Label($"  Chase Accel Time: {currentChaseAccelTime:F1}s");
+            GUILayout.Label($"  Charge Accel Time: {currentChargeAccelTime:F1}s");
+            
+            if (moveMode == MoveMode.chase)
+            {
+                float chaseProgress = Mathf.Clamp01(currentChaseAccelTime / chaseAccelerationTime);
+                GUILayout.Label($"  CHASE PROGRESS: {chaseProgress*100:F0}%");
+            }
+            else if (moveMode == MoveMode.charge)
+            {
+                float chargeProgress = Mathf.Clamp01(currentChargeAccelTime / chargeAccelerationTime);
+                GUILayout.Label($"  CHARGE PROGRESS: {chargeProgress*100:F0}%");
             }
             
             GUILayout.EndArea();
