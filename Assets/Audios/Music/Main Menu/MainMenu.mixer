@@ -20,7 +20,7 @@ AudioMixerGroupController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: SoundMusic
+  m_Name: Music
   m_AudioMixer: {fileID: 24100000}
   m_GroupID: a7d985b2fea04134694ac0aeea48a7af
   m_Children: []
@@ -33,6 +33,20 @@ AudioMixerGroupController:
   m_Mute: 0
   m_Solo: 0
   m_BypassEffects: 0
+--- !u!244 &-169379197450586225
+AudioMixerEffectController:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_EffectID: 7862a6070bd030144bd51218b75c963a
+  m_EffectName: Attenuation
+  m_MixLevel: 19165d7e996f789408170e572f6978a6
+  m_Parameters: []
+  m_SendTarget: {fileID: 0}
+  m_EnableWetMix: 0
+  m_Bypass: 0
 --- !u!241 &24100000
 AudioMixerController:
   m_ObjectHideFlags: 0
@@ -48,11 +62,16 @@ AudioMixerController:
   m_SuspendThreshold: -80
   m_EnableSuspend: 1
   m_UpdateMode: 0
-  m_ExposedParameters: []
+  m_ExposedParameters:
+  - guid: 43fccbe2308bb3044a076859bb72357d
+    name: MusicVolume
+  - guid: be2b526cb88be1c4188b1c79af2380ea
+    name: MyExposedParam
   m_AudioMixerGroupViews:
   - guids:
     - b02605ad025337b42bf9615f87e4d21e
     - a7d985b2fea04134694ac0aeea48a7af
+    - 13f82e5810706d840b14e06737963943
     name: View
   m_CurrentViewIndex: 0
   m_TargetSnapshot: {fileID: 24500006}
@@ -67,6 +86,7 @@ AudioMixerGroupController:
   m_GroupID: b02605ad025337b42bf9615f87e4d21e
   m_Children:
   - {fileID: -3419913691378546721}
+  - {fileID: 5979424869704317215}
   m_Volume: 66d01dfb161a1164788932b449168fe3
   m_Pitch: 1c0a26d12d459104bb2288033fe23e48
   m_Send: 00000000000000000000000000000000
@@ -100,6 +120,25 @@ AudioMixerSnapshotController:
   m_AudioMixer: {fileID: 24100000}
   m_SnapshotID: efc488c72f152c140865a65d4615bdec
   m_FloatValues:
-    43fccbe2308bb3044a076859bb72357d: 8
+    43fccbe2308bb3044a076859bb72357d: 0
     9f40480e0fa9e3d4aa246200b7acb9bd: 25
   m_TransitionOverrides: {}
+--- !u!243 &5979424869704317215
+AudioMixerGroupController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Sound
+  m_AudioMixer: {fileID: 24100000}
+  m_GroupID: 13f82e5810706d840b14e06737963943
+  m_Children: []
+  m_Volume: be2b526cb88be1c4188b1c79af2380ea
+  m_Pitch: 17d3561556cbf614990668a7c3643157
+  m_Send: 00000000000000000000000000000000
+  m_Effects:
+  - {fileID: -169379197450586225}
+  m_UserColorIndex: 0
+  m_Mute: 0
+  m_Solo: 0
+  m_BypassEffects: 0
