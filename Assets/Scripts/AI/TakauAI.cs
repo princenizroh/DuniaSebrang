@@ -13,6 +13,8 @@ namespace DS
         [field: SerializeField] public float chaseSpeed { get; private set; } = 5f;
         [field: SerializeField] public float maxTimeChasing { get; private set; } = 5f;
         [field: SerializeField] public float maxTimeWaiting { get; private set; } = 3f;
+        [Tooltip("Radius dimana player BENAR-BENAR MATI (death zone) - lebih kecil dari attack range")]
+        [field: SerializeField] public float radiusHit { get; private set; } = 1.5f;
         
         [field: Header("=== ACCELERATION SETTINGS ===")]
         [Tooltip("Kecepatan awal saat mulai chase (akan naik ke chaseSpeed)")]
@@ -48,7 +50,7 @@ namespace DS
         [field: SerializeField] private float currentChargeSearchVisionBonus;
 
         [field: Header("=== ATTACK SYSTEM ===")]
-        [Tooltip("Range dimana Takau bisa menyerang player")]
+        [Tooltip("Range dimana Takau bisa mulai attack animation (TIDAK langsung membunuh)")]
         [field: SerializeField] public float attackRange { get; private set; } = 3f;
         [Tooltip("Angle untuk attack - player harus di depan Takau")]
         [field: SerializeField] public float attackAngle { get; private set; } = 45f;
@@ -204,32 +206,40 @@ namespace DS
                 return;
             }
             
-            if (distanceToTarget <= attackRange) // Jika sangat dekat dengan target (attack range)
+            if (distanceToTarget <= radiusHit) // Jika SANGAT dekat (dalam death zone)
             {
                 if (!isHit)
                 {
-                    Debug.Log("Takau reached attack range - Initiating Attack!");
-                    
-                    // Check if attack conditions are met
-                    if (CheckAttackConditions())
+                    Debug.Log("Takau caught the player in DEATH ZONE - Game Over!");
+                    isHit = true;
+                    OnPlayerCaught(); // Immediate game over
+                }
+                return;
+            }
+            
+            if (distanceToTarget <= attackRange) // Jika dalam attack range (tapi belum death zone)
+            {
+                if (showChaseDebug) Debug.Log($"Player in attack range ({distanceToTarget:F1}m <= {attackRange:F1}m) but outside death zone ({radiusHit:F1}m)");
+                
+                // Check if attack conditions are met
+                if (CheckAttackConditions())
+                {
+                    // Switch to attack mode instead of immediate game over
+                    float timeSinceLastAttack = Time.time - lastAttackTime;
+                    if (timeSinceLastAttack >= attackCooldown)
                     {
-                        // Switch to attack mode instead of immediate game over
-                        float timeSinceLastAttack = Time.time - lastAttackTime;
-                        if (timeSinceLastAttack >= attackCooldown)
-                        {
-                            SwitchMoveMode(MoveMode.attack);
-                            return;
-                        }
+                        SwitchMoveMode(MoveMode.attack);
+                        return;
                     }
                     else
                     {
-                        // Too close but not in attack angle - game over (caught)
-                        Debug.Log("Takau caught the player - Game Over!");
-                        isHit = true;
-                        OnPlayerCaught();
+                        if (showChaseDebug) Debug.Log($"Attack on cooldown: {attackCooldown - timeSinceLastAttack:F1}s remaining");
                     }
                 }
-                return;
+                else
+                {
+                    if (showChaseDebug) Debug.Log("Player in attack range but not meeting attack conditions (angle/LOS)");
+                }
             }
             
             if (distanceToTarget <= minChaseDistance)  // Jika sudah dekat tapi belum hit, perlambat untuk lebih menakutkan
@@ -262,11 +272,29 @@ namespace DS
             agent.isStopped = true;
             isDetectTarget = false;
             
-            // Bisa tambahkan:
-            // - Game over logic
-            // - Damage player
-            // - Play death animation
-            // - Trigger cutscene
+            // Try to kill player using PlayerDeathHandler
+            if (currentTarget != null)
+            {
+                PlayerDeathHandler deathHandler = currentTarget.GetComponent<PlayerDeathHandler>();
+                
+                if (deathHandler == null)
+                {
+                    // Try in parent or children
+                    deathHandler = currentTarget.GetComponentInParent<PlayerDeathHandler>();
+                    if (deathHandler == null)
+                        deathHandler = currentTarget.GetComponentInChildren<PlayerDeathHandler>();
+                }
+                
+                if (deathHandler != null && deathHandler.CanDie())
+                {
+                    if (showChaseDebug) Debug.Log("★★★ KILLING PLAYER via PlayerDeathHandler (caught) ★★★");
+                    deathHandler.Die("Caught by Takau");
+                }
+                else
+                {
+                    if (showChaseDebug) Debug.LogWarning("Player caught but no PlayerDeathHandler found or player cannot die!");
+                }
+            }
         }
 
         private void Waiting()
@@ -386,7 +414,7 @@ namespace DS
             if (currentTarget != null)
             {
                 float distanceToPlayer = Vector3.Distance(transform.position, currentTarget.position);
-                if (distanceToPlayer <= attackRange && !isHit)
+                if (distanceToPlayer <= radiusHit && !isHit)
                 {
                     Debug.Log("Takau hit player during charge - Game Over!");
                     isHit = true;
@@ -788,9 +816,10 @@ namespace DS
             Gizmos.color = isDetectTarget ? new Color(0f, 1f, 0f, 0.3f) : new Color(0f, 0f, 1f, 0.3f);
             Gizmos.DrawWireSphere(transform.position, viewRadius + forwardVisionBonus);
             
-            // Hit radius (attack range visualization)
-            Gizmos.color = isHit ? Color.red : Color.magenta;
-            Gizmos.DrawWireSphere(transform.position, attackRange);
+            // DEATH ZONE (radiusHit) - Inner circle where player dies
+            Gizmos.color = isHit ? Color.red : new Color(1f, 0f, 0f, 0.8f);
+            Gizmos.DrawWireSphere(transform.position, radiusHit);
+            Gizmos.DrawSphere(transform.position, radiusHit * 0.1f); // Small center dot for visibility
             
             // Chase lose distance
             Gizmos.color = Color.cyan;
@@ -1584,37 +1613,34 @@ namespace DS
 
         private void OnPlayerAttacked()
         {
-            if (showChaseDebug) Debug.Log("Takau successfully attacked the player!");
+            if (showChaseDebug) Debug.Log("Takau attack animation completed!");
             
-            // Attack hit player
+            // Attack animation selesai, tapi ini TIDAK otomatis membunuh player
+            // Player hanya akan mati jika berada dalam radiusHit (di method Chasing atau saat contact)
+            
             if (currentTarget != null)
             {
                 float distanceToPlayer = Vector3.Distance(transform.position, currentTarget.position);
-                if (distanceToPlayer <= attackRange)
+                
+                if (showChaseDebug) 
                 {
-                    // Direct hit - immediate game over
-                    if (showChaseDebug) Debug.Log("Takau DIRECT HIT - Game Over!");
+                    Debug.Log($"Attack completed! Player distance: {distanceToPlayer:F1}m");
+                    Debug.Log($"RadiusHit (death zone): {radiusHit:F1}m");
+                    Debug.Log($"Player status: {(distanceToPlayer <= radiusHit ? "DEAD" : "SAFE")}");
+                }
+                
+                // HANYA jika player sangat dekat (dalam radiusHit) maka player mati
+                if (distanceToPlayer <= radiusHit)
+                {
+                    if (showChaseDebug) Debug.Log("Player was too close during attack - GAME OVER!");
                     isHit = true;
-                    OnPlayerCaught();
+                    OnPlayerCaught(); // Trigger game over
                 }
                 else
                 {
-                    // Attack successful but not direct hit
-                    if (showChaseDebug) Debug.Log($"Takau attack successful! Distance: {distanceToPlayer:F1}m");
-                    
-                    // Bisa tambahkan:
-                    // - Damage player
-                    // - Knockback effect
-                    // - Screen shake
-                    // - Blood effect
-                    // - Player health reduction
-                    
-                    // Example damage logic (uncomment if you have player health system):
-                    // PlayerHealth playerHealth = currentTarget.GetComponent<PlayerHealth>();
-                    // if (playerHealth != null)
-                    // {
-                    //     playerHealth.TakeDamage(attackDamage);
-                    // }
+                    if (showChaseDebug) Debug.Log("Player survived the attack - was outside death radius!");
+                    // Player selamat dari attack karena tidak dalam radiusHit
+                    // Tidak ada damage, hanya visual effect attack
                 }
             }
         }
