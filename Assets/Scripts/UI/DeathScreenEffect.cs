@@ -101,6 +101,16 @@ namespace DS
         [Tooltip("Canvas group untuk fade control")]
         [SerializeField] private CanvasGroup canvasGroup;
         
+        [Header("=== RESPAWN FADE ===")]
+        [Tooltip("Duration for fade out after respawn (fade from black to clear)")]
+        [SerializeField] private float fadeOutDuration = 2f;
+        
+        [Tooltip("Delay after death fade complete before triggering respawn")]
+        [SerializeField] private float respawnDelay = 1.5f;
+        
+        [Tooltip("Curve for fade out animation")]
+        [SerializeField] private AnimationCurve fadeOutCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+        
         [Header("=== DEBUG ===")]
         [Tooltip("Show debug messages")]
         [SerializeField] private bool showDebug = true;
@@ -111,10 +121,14 @@ namespace DS
         // Runtime variables
         private bool isFading = false;
         private bool fadeComplete = false;
+        private bool isFadingOut = false;
         private float fadeStartTime;
         private Vector3 originalCameraPosition;
         private float originalAudioVolume;
         private float originalTimeScale;
+        
+        // Respawn integration
+        private System.Action onRespawnTrigger;
         
         // Vignette effect variables
         private Material vignetteMaterial;
@@ -132,7 +146,9 @@ namespace DS
         // Properties
         public bool IsFading => isFading;
         public bool FadeComplete => fadeComplete;
+        public bool IsFadingOut => isFadingOut;
         public float FadeProgress { get; private set; }
+        public float RespawnDelay => respawnDelay;
         
         private void Awake()
         {
@@ -207,15 +223,18 @@ namespace DS
         }
         
         /// <summary>
-        /// Main method to trigger death fade effect
+        /// Main method to trigger death fade effect with respawn callback
         /// </summary>
-        public void TriggerDeathFade()
+        public void TriggerDeathFade(System.Action respawnCallback = null)
         {
-            if (isFading)
+            if (isFading || isFadingOut)
             {
                 if (showDebug) Debug.LogWarning("DeathScreenEffect: Fade already in progress!");
                 return;
             }
+            
+            // Store respawn callback
+            onRespawnTrigger = respawnCallback;
             
             if (showDebug) 
             {
@@ -227,6 +246,7 @@ namespace DS
             fadeStartTime = Time.unscaledTime; // Use unscaled time in case we slow down time
             isFading = true;
             fadeComplete = false;
+            isFadingOut = false;
             FadeProgress = 0f;
             
             // Start ambient audio if enabled and set to play immediately
@@ -441,8 +461,26 @@ namespace DS
             if (showDebug) 
             {
                 Debug.Log("★★★ DEATH FADE COMPLETE! ★★★");
-                Debug.Log("Player death screen effect finished - ready for restart/checkpoint");
+                Debug.Log("Player death screen effect finished - triggering respawn...");
             }
+            
+            // Wait for respawn delay, then trigger respawn
+            StartCoroutine(TriggerRespawnAfterDelay());
+        }
+        
+        /// <summary>
+        /// Wait for respawn delay, then trigger the respawn callback
+        /// </summary>
+        private IEnumerator TriggerRespawnAfterDelay()
+        {
+            if (showDebug) Debug.Log($"Waiting {respawnDelay}s before triggering respawn...");
+            
+            yield return new WaitForSecondsRealtime(respawnDelay);
+            
+            if (showDebug) Debug.Log("★★★ TRIGGERING RESPAWN CALLBACK ★★★");
+            
+            // Call the respawn callback if provided
+            onRespawnTrigger?.Invoke();
             
             // Notify that fade is complete (for external systems)
             OnDeathFadeComplete();
@@ -669,7 +707,8 @@ namespace DS
             GUILayout.Space(5);
             
             GUILayout.Label($"Effect Type: {(useVignetteEffect ? "Vignette (Little Nightmares)" : "Standard Fade")}", normalStyle);
-            GUILayout.Label($"Is Fading: {isFading}", normalStyle);
+            GUILayout.Label($"Is Fading In: {isFading}", normalStyle);
+            GUILayout.Label($"Is Fading Out: {isFadingOut}", normalStyle);
             GUILayout.Label($"Fade Complete: {fadeComplete}", normalStyle);
             GUILayout.Label($"Fade Progress: {FadeProgress:P1}", normalStyle);
             
@@ -695,6 +734,11 @@ namespace DS
             if (GUILayout.Button("Test Death Fade", GUILayout.Height(30)))
             {
                 TriggerDeathFade();
+            }
+            
+            if (GUILayout.Button("Test Fade Out", GUILayout.Height(30)))
+            {
+                TriggerFadeOut();
             }
             
             if (GUILayout.Button("Reset Effect", GUILayout.Height(30)))
@@ -859,6 +903,147 @@ namespace DS
             ambientAudioSource.spatialBlend = 0f; // 2D audio
             
             if (showDebug) Debug.Log($"Ambient audio configured: {ambientAudio.AudioName}");
+        }
+        
+        /// <summary>
+        /// Trigger fade out after respawn (fade from black to clear)
+        /// </summary>
+        public void TriggerFadeOut()
+        {
+            if (isFadingOut)
+            {
+                if (showDebug) Debug.LogWarning("DeathScreenEffect: Fade out already in progress!");
+                return;
+            }
+            
+            if (!fadeComplete)
+            {
+                if (showDebug) Debug.LogWarning("DeathScreenEffect: Cannot fade out - fade to black not complete yet!");
+                return;
+            }
+            
+            if (showDebug) 
+            {
+                Debug.Log("★★★ STARTING FADE OUT TO RESTORE GAMEPLAY ★★★");
+            }
+            
+            isFadingOut = true;
+            
+            // Stop ambient audio
+            StopAmbientAudio();
+            
+            // Start fade out coroutine
+            if (fadeCoroutine != null)
+                StopCoroutine(fadeCoroutine);
+                
+            fadeCoroutine = StartCoroutine(FadeOutCoroutine());
+        }
+        
+        /// <summary>
+        /// Coroutine to handle fade out from black to clear
+        /// </summary>
+        private IEnumerator FadeOutCoroutine()
+        {
+            if (showDebug) Debug.Log("Starting fade out coroutine...");
+            
+            float elapsed = 0f;
+            Color startColor = fadeColor;
+            startColor.a = 1f; // Start fully opaque
+            Color targetColor = fadeColor;
+            targetColor.a = 0f; // End transparent
+            
+            while (elapsed < fadeOutDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float progress = elapsed / fadeOutDuration;
+                
+                // Apply fade out curve
+                float curveProgress = fadeOutCurve.Evaluate(progress);
+                
+                // Update fade overlay
+                if (fadeOverlay != null)
+                {
+                    Color currentColor = Color.Lerp(startColor, targetColor, curveProgress);
+                    fadeOverlay.color = currentColor;
+                }
+                
+                // Update canvas group alpha
+                if (canvasGroup != null)
+                {
+                    canvasGroup.alpha = Mathf.Lerp(1f, 0f, curveProgress);
+                }
+                
+                // Restore audio volume gradually
+                if (reduceAudioOnFade)
+                {
+                    float audioVolume = Mathf.Lerp(targetAudioVolume, originalAudioVolume, curveProgress);
+                    AudioListener.volume = audioVolume;
+                }
+                
+                // Restore time scale gradually
+                if (enableSlowMotion)
+                {
+                    float timeScale = Mathf.Lerp(targetTimeScale, originalTimeScale, curveProgress);
+                    Time.timeScale = timeScale;
+                }
+                
+                // Update fade progress for external monitoring
+                FadeProgress = 1f - curveProgress; // Inverted for fade out
+                
+                yield return null;
+            }
+            
+            // Ensure final state
+            OnFadeOutComplete();
+        }
+        
+        /// <summary>
+        /// Called when fade out is complete
+        /// </summary>
+        private void OnFadeOutComplete()
+        {
+            if (showDebug) Debug.Log("★★★ FADE OUT COMPLETE - GAMEPLAY RESTORED ★★★");
+            
+            // Reset all states
+            isFading = false;
+            fadeComplete = false;
+            isFadingOut = false;
+            FadeProgress = 0f;
+            
+            // Restore full transparency
+            if (fadeOverlay != null)
+            {
+                Color clearColor = fadeColor;
+                clearColor.a = 0f;
+                fadeOverlay.color = clearColor;
+            }
+            
+            // Restore canvas group
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 0f;
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
+            }
+            
+            // Fully restore audio and time
+            AudioListener.volume = originalAudioVolume;
+            Time.timeScale = originalTimeScale;
+            
+            // Reset camera position (in case shake is still active)
+            if (mainCamera != null)
+                mainCamera.transform.localPosition = originalCameraPosition;
+            
+            if (showDebug) Debug.Log("Death screen effect fully reset - ready for normal gameplay");
+        }
+        
+        /// <summary>
+        /// Test fade out for testing
+        /// </summary>
+        [ContextMenu("Test Fade Out")]
+        private void TestFadeOut()
+        {
+            TriggerFadeOut();
         }
     }
 }

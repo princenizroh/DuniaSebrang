@@ -35,6 +35,13 @@ namespace DS
         [Tooltip("Death screen effect component (will be auto-found if not assigned)")]
         [SerializeField] private DeathScreenEffect deathScreenEffect;
         
+        [Header("=== SAVE SYSTEM ===")]
+        [Tooltip("Auto respawn to checkpoint after death animation")]
+        [SerializeField] private bool autoRespawnToCheckpoint = true;
+        
+        [Tooltip("Delay before respawn (after death animation)")]
+        [SerializeField] private float respawnDelay = 2f;
+        
         [Header("=== DEBUG ===")]
         [Tooltip("Show debug messages")]
         [SerializeField] private bool showDebug = true;
@@ -42,11 +49,15 @@ namespace DS
         // Runtime variables
         private float deathStartTime;
         private bool deathAnimationPlaying = false;
+        private bool respawnScheduled = false;
         
         // Component references
         private Rigidbody playerRigidbody;
         private Collider playerCollider;
         private MonoBehaviour[] playerScripts;
+        
+        // Save system reference (will be found at runtime)
+        private object saveManager; // Using object to avoid compile errors if SaveManager not found
         
         // Properties
         public bool IsDead => isDead;
@@ -66,6 +77,14 @@ namespace DS
                 if (deathEffectObj != null)
                     deathScreenEffect = deathEffectObj.GetComponent<DeathScreenEffect>();
             }
+            
+            // Find SaveManager using reflection to avoid compile errors
+            GameObject saveManagerObj = GameObject.Find("SaveManager");
+            if (saveManagerObj != null)
+                saveManager = saveManagerObj.GetComponent("SaveManager");
+                
+            if (saveManager == null && showDebug)
+                Debug.LogWarning("PlayerDeathHandler: No SaveManager found in scene!");
         
             playerRigidbody = GetComponent<Rigidbody>();
             playerCollider = GetComponent<Collider>();
@@ -108,6 +127,9 @@ namespace DS
                 Debug.Log($"[DEATH DEBUG] Die() called from: {System.Environment.StackTrace}");
             }
             
+            // IMPORTANT: Prevent any save operations during death to avoid overwriting checkpoint
+            PreventAutoSaveDuringDeath();
+            
             // Set death state
             isDead = true;
             deathStartTime = Time.time;
@@ -122,6 +144,30 @@ namespace DS
             ShowDeathUI();
             
             if (showDebug) Debug.Log("Player death sequence initiated");
+        }
+        
+        /// <summary>
+        /// Prevent SaveManager from auto-saving during death to preserve checkpoint position
+        /// </summary>
+        private void PreventAutoSaveDuringDeath()
+        {
+            if (saveManager != null)
+            {
+                try
+                {
+                    // Call method to temporarily disable auto-save during death
+                    var preventSaveMethod = saveManager.GetType().GetMethod("SetDeathState");
+                    if (preventSaveMethod != null)
+                    {
+                        preventSaveMethod.Invoke(saveManager, new object[] { true });
+                        if (showDebug) Debug.Log("★ Death state set in SaveManager - auto-save disabled");
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    if (showDebug) Debug.LogWarning($"Could not prevent auto-save during death: {e.Message}");
+                }
+            }
         }
         
         /// <summary>
@@ -222,18 +268,50 @@ namespace DS
         {
             if (showDebug) Debug.Log("Showing death UI and effects...");
             
-            // Trigger death screen effect (Little Nightmares style fade)
+            // Trigger death screen effect with respawn callback
             if (deathScreenEffect != null)
             {
-                // Call TriggerDeathFade method directly
-                deathScreenEffect.TriggerDeathFade();
-                if (showDebug) Debug.Log("★ Death screen fade effect triggered!");
+                // Pass respawn callback to death screen effect
+                deathScreenEffect.TriggerDeathFade(OnRespawnRequested);
+                if (showDebug) Debug.Log("★ Death screen fade effect triggered with respawn callback!");
             }
             else
             {
                 if (showDebug) Debug.LogWarning("No death screen effect assigned - create UI with DeathScreenEffect component");
+                
+                // Fallback: schedule respawn directly if no death effect
+                if (autoRespawnToCheckpoint && !respawnScheduled)
+                {
+                    respawnScheduled = true;
+                    float totalDelay = deathAnimationDuration + respawnDelay;
+                    Invoke(nameof(TriggerRespawnToCheckpoint), totalDelay);
+                    if (showDebug) Debug.Log($"Fallback: Scheduled respawn in {totalDelay}s");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Callback method called by DeathScreenEffect when respawn should happen
+        /// </summary>
+        private void OnRespawnRequested()
+        {
+            if (showDebug) Debug.Log("★★★ RESPAWN REQUESTED BY DEATH SCREEN EFFECT ★★★");
+            
+            if (!autoRespawnToCheckpoint)
+            {
+                if (showDebug) Debug.Log("Auto respawn disabled - waiting for manual respawn");
+                return;
             }
             
+            if (respawnScheduled)
+            {
+                if (showDebug) Debug.Log("Respawn already scheduled - ignoring duplicate request");
+                return;
+            }
+            
+            // Trigger respawn immediately
+            respawnScheduled = true;
+            TriggerRespawnToCheckpoint();
         }
         
         private void CheckDeathAnimationProgress()
@@ -276,29 +354,110 @@ namespace DS
         {
             if (showDebug) Debug.Log("Death animation completed");
             
-            // Death animation finished - ready for restart/checkpoint logic
-            // This is where future checkpoint/restart logic will go
-            
-            // For now, just log completion
-            if (showDebug) Debug.Log("=== READY FOR RESTART/CHECKPOINT LOGIC ===");
+            // The respawn is now triggered by the DeathScreenEffect callback system
+            // No longer scheduling respawn here to avoid conflicts
+            if (showDebug) Debug.Log("=== WAITING FOR DEATH SCREEN EFFECT TO TRIGGER RESPAWN ===");
         }
         
         /// <summary>
-        /// Method to reset player state (for future restart logic)
+        /// Trigger respawn to last checkpoint
         /// </summary>
-        public void ResetPlayer()
+        private void TriggerRespawnToCheckpoint()
         {
-            if (showDebug) Debug.Log("Resetting player state...");
+            if (showDebug) Debug.Log("★★★ TRIGGERING RESPAWN TO CHECKPOINT ★★★");
             
-            isDead = false;
-            deathAnimationPlaying = false;
+            // Try to respawn via SaveManager
+            if (saveManager != null)
+            {
+                try
+                {
+                    // Use reflection to call RespawnAtLastCheckpoint method
+                    var respawnMethod = saveManager.GetType().GetMethod("RespawnAtLastCheckpoint");
+                    if (respawnMethod != null)
+                    {
+                        respawnMethod.Invoke(saveManager, null);
+                        if (showDebug) Debug.Log("Respawn triggered via SaveManager");
+                        
+                        // Trigger fade out to restore gameplay
+                        TriggerFadeOutAfterRespawn();
+                    }
+                    else
+                    {
+                        if (showDebug) Debug.LogWarning("RespawnAtLastCheckpoint method not found on SaveManager");
+                        FallbackRespawn();
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    if (showDebug) Debug.LogError($"Error calling SaveManager respawn: {e.Message}");
+                    FallbackRespawn();
+                }
+            }
+            else
+            {
+                if (showDebug) Debug.LogWarning("No SaveManager available - using fallback respawn");
+                FallbackRespawn();
+            }
             
-            // Reset death screen effect
+            // Reset respawn state
+            respawnScheduled = false;
+        }
+        
+        /// <summary>
+        /// Trigger fade out effect after respawn to restore normal gameplay
+        /// </summary>
+        private void TriggerFadeOutAfterRespawn()
+        {
             if (deathScreenEffect != null)
             {
-                deathScreenEffect.ResetDeathEffect();
-                if (showDebug) Debug.Log("Death screen effect reset");
+                // Small delay to ensure player position is set before fade out
+                StartCoroutine(DelayedFadeOut());
+                if (showDebug) Debug.Log("★ Fade out triggered after respawn!");
             }
+            else
+            {
+                // If no death effect, just reset player immediately
+                ResetPlayerAfterRespawn();
+                if (showDebug) Debug.Log("No death effect - resetting player immediately");
+            }
+        }
+        
+        /// <summary>
+        /// Coroutine to add small delay before fade out (ensures player is positioned correctly)
+        /// </summary>
+        private System.Collections.IEnumerator DelayedFadeOut()
+        {
+            // Wait one frame to ensure SaveManager has positioned player
+            yield return null;
+            yield return null; // Wait additional frame for safety
+            
+            if (showDebug) Debug.Log("Starting fade out to restore gameplay...");
+            
+            // Trigger fade out
+            deathScreenEffect.TriggerFadeOut();
+            
+            // Wait for fade out to complete before fully resetting player
+            yield return new WaitForSecondsRealtime(deathScreenEffect != null ? 2f : 0.5f);
+            
+            // Final player reset
+            ResetPlayerAfterRespawn();
+        }
+        
+        /// <summary>
+        /// Reset player state after respawn and fade out
+        /// </summary>
+        private void ResetPlayerAfterRespawn()
+        {
+            if (showDebug) Debug.Log("Resetting player state after respawn...");
+            
+            // Reset death states
+            isDead = false;
+            deathAnimationPlaying = false;
+            respawnScheduled = false;
+            
+            // Re-enable auto-save in SaveManager
+            RestoreAutoSaveAfterRespawn();
+            
             // Re-enable player controls
             if (playerRigidbody != null)
                 playerRigidbody.isKinematic = false;
@@ -309,6 +468,70 @@ namespace DS
             // Reset animator
             if (playerAnimator != null)
                 playerAnimator.Rebind();
+            
+            if (showDebug) Debug.Log("★★★ PLAYER RESPAWN COMPLETE - READY FOR GAMEPLAY ★★★");
+        }
+        
+        /// <summary>
+        /// Re-enable auto-save in SaveManager after respawn is complete
+        /// </summary>
+        private void RestoreAutoSaveAfterRespawn()
+        {
+            if (saveManager != null)
+            {
+                try
+                {
+                    // Call method to re-enable auto-save after respawn
+                    var restoreSaveMethod = saveManager.GetType().GetMethod("SetDeathState");
+                    if (restoreSaveMethod != null)
+                    {
+                        restoreSaveMethod.Invoke(saveManager, new object[] { false });
+                        if (showDebug) Debug.Log("★ Death state cleared in SaveManager - auto-save restored");
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    if (showDebug) Debug.LogWarning($"Could not restore auto-save after respawn: {e.Message}");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Fallback respawn if SaveManager is not available
+        /// </summary>
+        private void FallbackRespawn()
+        {
+            if (showDebug) Debug.Log("Using fallback respawn (simple player reset)");
+            
+            // TODO: Move player to a default spawn point if available
+            // For now, just reset player state
+            
+            // Trigger fade out even for fallback respawn
+            TriggerFadeOutAfterRespawn();
+        }
+        
+        /// <summary>
+        /// Method to reset player state (for restart/checkpoint logic)
+        /// </summary>
+        public void ResetPlayer()
+        {
+            if (showDebug) Debug.Log("Resetting player state...");
+            
+            // Cancel any pending respawn
+            CancelInvoke(nameof(TriggerRespawnToCheckpoint));
+            
+            // DON'T stop all coroutines as it will interrupt fade-out
+            // StopAllCoroutines(); // REMOVED - this was causing fade-out to be interrupted
+            
+            // Reset death screen effect
+            if (deathScreenEffect != null)
+            {
+                deathScreenEffect.ResetDeathEffect();
+                if (showDebug) Debug.Log("Death screen effect reset");
+            }
+            
+            // Reset player state after respawn
+            ResetPlayerAfterRespawn();
             
             if (showDebug) Debug.Log("Player reset completed");
         }
@@ -373,22 +596,65 @@ namespace DS
             ResetPlayer();
         }
         
+        /// <summary>
+        /// Debug method to test checkpoint respawn
+        /// </summary>
+        [ContextMenu("Test Checkpoint Respawn")]
+        private void TestCheckpointRespawn()
+        {
+            TriggerRespawnToCheckpoint();
+        }
+        
+        /// <summary>
+        /// Debug method to force save at current position
+        /// </summary>
+        [ContextMenu("Force Save Current Position")]
+        private void ForceSaveCurrentPosition()
+        {
+            if (saveManager != null)
+            {
+                try
+                {
+                    var quickSaveMethod = saveManager.GetType().GetMethod("QuickSave");
+                    if (quickSaveMethod != null)
+                    {
+                        quickSaveMethod.Invoke(saveManager, null);
+                        if (showDebug) Debug.Log("Force save completed");
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    if (showDebug) Debug.LogError($"Error force saving: {e.Message}");
+                }
+            }
+        }
+        
         // Debug GUI
         private void OnGUI()
         {
             if (!showDebug) return;
             
-            GUILayout.BeginArea(new Rect(10, 450, 300, 200));
+            GUILayout.BeginArea(new Rect(10, 450, 350, 250));
             GUILayout.Label("=== PLAYER DEATH DEBUG ===");
             GUILayout.Label($"Is Dead: {isDead}");
             GUILayout.Label($"Death Animation Playing: {deathAnimationPlaying}");
+            GUILayout.Label($"Respawn Scheduled: {respawnScheduled}");
+            GUILayout.Label($"Auto Respawn: {autoRespawnToCheckpoint}");
+            GUILayout.Label($"SaveManager Found: {saveManager != null}");
             
             if (isDead)
             {
                 float timeSinceDeath = Time.time - deathStartTime;
                 GUILayout.Label($"Time Since Death: {timeSinceDeath:F1}s");
                 GUILayout.Label($"Animation Duration: {deathAnimationDuration:F1}s");
+                
+                if (respawnScheduled)
+                {
+                    GUILayout.Label($"Respawn Delay: {respawnDelay:F1}s");
+                }
             }
+            
+            GUILayout.Space(5);
             
             if (GUILayout.Button("Test Death"))
             {
@@ -398,6 +664,16 @@ namespace DS
             if (GUILayout.Button("Reset Player"))
             {
                 ResetPlayer();
+            }
+            
+            if (GUILayout.Button("Force Respawn to Checkpoint"))
+            {
+                TriggerRespawnToCheckpoint();
+            }
+            
+            if (GUILayout.Button("Force Save Current Position"))
+            {
+                ForceSaveCurrentPosition();
             }
             
             GUILayout.EndArea();
