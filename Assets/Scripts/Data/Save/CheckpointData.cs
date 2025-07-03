@@ -53,12 +53,49 @@ namespace DS.Data.Save
                 Transform selectedTransform = UnityEditor.Selection.activeGameObject.transform;
                 spawnPosition = selectedTransform.position;
                 spawnRotation = selectedTransform.eulerAngles;
-                Debug.Log($"Checkpoint spawn point set to: {spawnPosition}");
+                
+                // Mark dirty to save changes
+                UnityEditor.EditorUtility.SetDirty(this);
+                
+                Debug.Log($"★ Checkpoint spawn point set to: {spawnPosition}, Rotation: {spawnRotation}");
             }
             else
             {
                 Debug.LogWarning("No GameObject selected! Select a GameObject in scene first.");
             }
+        }
+        
+        /// <summary>
+        /// Auto-find CheckpointTrigger in scene and sync position
+        /// </summary>
+        [ContextMenu("Sync with CheckpointTrigger")]
+        private void SyncWithCheckpointTrigger()
+        {
+            // Find CheckpointTrigger that references this CheckpointData
+            CheckpointTrigger[] triggers = UnityEngine.Object.FindObjectsByType<CheckpointTrigger>(FindObjectsSortMode.None);
+            
+            foreach (var trigger in triggers)
+            {
+                // Use reflection to check if this trigger references this checkpoint data
+                var field = trigger.GetType().GetField("checkpointData", 
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                
+                if (field != null)
+                {
+                    var referencedData = field.GetValue(trigger) as CheckpointData;
+                    if (referencedData == this)
+                    {
+                        spawnPosition = trigger.transform.position;
+                        spawnRotation = trigger.transform.eulerAngles;
+                        UnityEditor.EditorUtility.SetDirty(this);
+                        
+                        Debug.Log($"★ Synced with CheckpointTrigger '{trigger.name}': {spawnPosition}");
+                        return;
+                    }
+                }
+            }
+            
+            Debug.LogWarning("No CheckpointTrigger found that references this CheckpointData!");
         }
 #endif
     }

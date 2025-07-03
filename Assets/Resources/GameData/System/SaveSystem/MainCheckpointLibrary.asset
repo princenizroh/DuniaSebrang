@@ -15,6 +15,7 @@ MonoBehaviour:
   id: 
   allCheckpoints:
   - {fileID: 11400000, guid: 7554509441a635f4588900e36f8f412a, type: 2}
+  - {fileID: 11400000, guid: edeb83287180681409ad8a9b218286cf, type: 2}
   defaultStartingCheckpoint: {fileID: 11400000, guid: 7554509441a635f4588900e36f8f412a, type: 2}
   libraryName: Main Checkpoint Library
   description: Collection of all checkpoints in the game

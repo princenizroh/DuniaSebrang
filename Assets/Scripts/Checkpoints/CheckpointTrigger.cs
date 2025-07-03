@@ -37,6 +37,13 @@ namespace DS
         [Tooltip("Visual indicator checkpoint")]
         [SerializeField] private GameObject visualIndicator;
         
+        [Header("=== AUTO-UPDATE POSITION ===")]
+        [Tooltip("Automatically update checkpoint spawn position when this GameObject moves")]
+        [SerializeField] private bool autoUpdateSpawnPosition = true;
+        
+        [Tooltip("Update spawn position in real-time (Editor only)")]
+        [SerializeField] private bool realTimeUpdate = true;
+        
         [Header("=== DEBUG ===")]
         [Tooltip("Show debug messages")]
         [SerializeField] private bool showDebug = true;
@@ -45,6 +52,10 @@ namespace DS
         private bool hasBeenTriggered = false;
         private SaveManager saveManager;
         private Collider triggerCollider;
+        
+        // Last known position for change detection
+        private Vector3 lastPosition;
+        private Vector3 lastRotation;
         
         private void Awake()
         {
@@ -71,16 +82,28 @@ namespace DS
                 return;
             }
             
+            // Initialize position tracking
+            lastPosition = transform.position;
+            lastRotation = transform.eulerAngles;
+            
             // Set position dari checkpoint data jika tidak diset manual
             if (checkpointData.spawnPosition == Vector3.zero)
             {
-                checkpointData.spawnPosition = transform.position;
-                checkpointData.spawnRotation = transform.eulerAngles;
+                UpdateCheckpointPosition();
                 if (showDebug) Debug.Log($"Auto-set checkpoint position: {transform.position}");
             }
             
             // Setup visual indicator
             SetupVisualIndicator();
+        }
+        
+        private void Update()
+        {
+            // Auto-update position if enabled and position has changed
+            if (autoUpdateSpawnPosition && realTimeUpdate && checkpointData != null)
+            {
+                CheckForPositionChanges();
+            }
         }
         
         private void OnTriggerEnter(Collider other)
@@ -214,6 +237,77 @@ namespace DS
             return checkpointData != null ? checkpointData.spawnRotation : transform.eulerAngles;
         }
         
+        /// <summary>
+        /// Check if transform has moved and update checkpoint position accordingly
+        /// </summary>
+        private void CheckForPositionChanges()
+        {
+            bool positionChanged = Vector3.Distance(transform.position, lastPosition) > 0.01f;
+            bool rotationChanged = Vector3.Distance(transform.eulerAngles, lastRotation) > 0.1f;
+            
+            if (positionChanged || rotationChanged)
+            {
+                UpdateCheckpointPosition();
+                lastPosition = transform.position;
+                lastRotation = transform.eulerAngles;
+                
+                if (showDebug)
+                    Debug.Log($"Checkpoint position auto-updated: {transform.position}");
+            }
+        }
+        
+        /// <summary>
+        /// Update checkpoint spawn position to current transform position
+        /// </summary>
+        private void UpdateCheckpointPosition()
+        {
+            if (checkpointData == null) return;
+            
+            checkpointData.spawnPosition = transform.position;
+            checkpointData.spawnRotation = transform.eulerAngles;
+            
+            #if UNITY_EDITOR
+            // Mark the ScriptableObject as dirty so changes are saved
+            UnityEditor.EditorUtility.SetDirty(checkpointData);
+            #endif
+        }
+        
+        /// <summary>
+        /// Manually update checkpoint position to current transform (Context Menu)
+        /// </summary>
+        [ContextMenu("Update Checkpoint Position")]
+        private void ManualUpdateCheckpointPosition()
+        {
+            if (checkpointData == null)
+            {
+                Debug.LogError("No checkpoint data assigned!");
+                return;
+            }
+            
+            UpdateCheckpointPosition();
+            Debug.Log($"Checkpoint position manually updated to: {transform.position}");
+        }
+        
+        /// <summary>
+        /// Force checkpoint position to match current transform (Context Menu)
+        /// </summary>
+        [ContextMenu("Force Sync Position")]
+        private void ForceSyncPosition()
+        {
+            ManualUpdateCheckpointPosition();
+            
+            // Also update tracking variables
+            lastPosition = transform.position;
+            lastRotation = transform.eulerAngles;
+            
+            #if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+            UnityEditor.EditorUtility.SetDirty(checkpointData);
+            #endif
+            
+            Debug.Log("★ Force sync completed - checkpoint position synchronized!");
+        }
+
         // Properties
         public CheckpointData CheckpointData => checkpointData;
         public bool HasBeenTriggered => hasBeenTriggered;
@@ -221,11 +315,10 @@ namespace DS
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            // Auto-setup trigger collider
-            Collider col = GetComponent<Collider>();
-            if (col != null)
+            // Auto-update position when values change in inspector
+            if (autoUpdateSpawnPosition && checkpointData != null && Application.isPlaying)
             {
-                col.isTrigger = true;
+                UpdateCheckpointPosition();
             }
         }
         

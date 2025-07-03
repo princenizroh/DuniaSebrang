@@ -15,10 +15,10 @@ namespace DS
         [SerializeField] private Image fadeOverlay;
         
         [Tooltip("Durasi fade dari transparan ke hitam (detik)")]
-        [SerializeField] private float fadeDuration = 3.5f;
+        [SerializeField] private float fadeDuration = 3f;
         
         [Tooltip("Delay sebelum fade dimulai (detik)")]
-        [SerializeField] private float fadeDelay = 0.5f;
+        [SerializeField] private float fadeDelay = 0.2f;
         
         [Tooltip("Curve untuk fade animation (easing)")]
         [SerializeField] private AnimationCurve fadeCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
@@ -28,10 +28,10 @@ namespace DS
         [SerializeField] private bool useVignetteEffect = true;
         
         [Tooltip("Vignette intensity (how strong the edge darkening is)")]
-        [SerializeField] private float vignetteIntensity = 2.5f;
+        [SerializeField] private float vignetteIntensity = 1.5f;
         
         [Tooltip("Vignette smoothness (how smooth the transition from edge to center)")]
-        [SerializeField] private float vignetteSmoothness = 0.6f;
+        [SerializeField] private float vignetteSmoothness = 0f;
         
         [Tooltip("Center point of vignette (0.5,0.5 = screen center)")]
         [SerializeField] private Vector2 vignetteCenter = new Vector2(0.5f, 0.5f);
@@ -50,11 +50,11 @@ namespace DS
         [SerializeField] private bool enableSlowMotion = true;
         
         [Tooltip("Target time scale saat fade")]
-        [SerializeField] private float targetTimeScale = 0.3f;
+        [SerializeField] private float targetTimeScale = 0.5f;
         
         [Header("=== ADDITIONAL EFFECTS ===")]
         [Tooltip("Blur effect saat fade (optional)")]
-        [SerializeField] private bool enableBlurEffect = false;
+        [SerializeField] private bool enableBlurEffect = true;
         
         [Tooltip("Vignette effect untuk atmosphere")]
         [SerializeField] private bool enableVignetteEffect = true;
@@ -103,10 +103,10 @@ namespace DS
         
         [Header("=== RESPAWN FADE ===")]
         [Tooltip("Duration for fade out after respawn (fade from black to clear)")]
-        [SerializeField] private float fadeOutDuration = 2f;
+        [SerializeField] private float fadeOutDuration = 10f;
         
         [Tooltip("Delay after death fade complete before triggering respawn")]
-        [SerializeField] private float respawnDelay = 1.5f;
+        [SerializeField] private float respawnDelay = 0f;
         
         [Tooltip("Curve for fade out animation")]
         [SerializeField] private AnimationCurve fadeOutCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
