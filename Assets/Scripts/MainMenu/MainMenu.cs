@@ -1,217 +1,119 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using System.Collections;
 
 namespace Lilu
 {
     public class MainMenu : MonoBehaviour
     {
-        public static MainMenu Instance { get; set; } 
-        
+        public static MainMenu Instance { get; private set; }
+
+        [Header("UI Panels")]
         [SerializeField] private GameObject settingsMenu;
-        [SerializeField] private GameObject brightnessMenu;
-        [SerializeField] private GameObject audioMenu;
-        [SerializeField] private GameObject guideMenu;
-        [SerializeField] private GameObject aboutMenu;
-        [SerializeField] private GameObject newGameMenu;
-        // public DataManager dataManager;
+        [SerializeField] private GameObject kotrolMenu;
+        [SerializeField] private GameObject aboutUs;
 
-        private bool isSetting = false;
-        private bool isBrightness = false;
-        private bool isAudio = false;
-        private bool isGuide = false;
-        private bool isAbout = false;
+        private bool isSettingsOpen = false;
+        private bool isKontrolOpen = false;
+        private bool isAboutOpen = false;
 
-        public bool isMenuOpen;
+        public bool IsMenuOpen => isSettingsOpen || isKontrolOpen || isAboutOpen;
 
         private void Awake()
         {
             if (Instance != null && Instance != this)
             {
-                Destroy(this.gameObject);
+                Destroy(gameObject);
+                return;
             }
-            else
-            {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
+
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
-        void Update()
+
+        private void Update()
         {
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                if (isSetting)
-                {
-                    CloseSettings();
-                }
-                else if (isBrightness)
-                {
-                    CloseBrightness();
-                }
-                else if (isAudio)
-                {
-                    CloseAudio();
-                }
-                else if (isGuide)
-                {
-                    CloseGuide();
-                }
-                else if (isAbout)
-                {
-                    CloseAbout();
-                }
-                else
-                {
-                    BackToMainMenu();
-                }
+                HandleEscape();
+            }
+        }
+
+        private void HandleEscape()
+        {
+            if (isSettingsOpen)
+            {
+                CloseSettings();
+            }
+            else if (isKontrolOpen)
+            {
+                CloseKonrol();
+            }
+            else if (isAboutOpen)
+            {
+                CloseAbout();
+            }
+            else
+            {
+                HideAllPanels();
             }
         }
 
         public void OpenSettings()
         {
-            isSetting = true;
-            isBrightness = false;
-            isAudio = false;
-            isGuide = false;
-            isAbout = false;
+            isSettingsOpen = true;
+            isAboutOpen = false;
 
             settingsMenu.SetActive(true);
-            brightnessMenu.SetActive(false);
-            audioMenu.SetActive(false);
-            guideMenu.SetActive(false);
-            aboutMenu.SetActive(false);
+            aboutUs.SetActive(false);
         }
-
-        public void OpenBrightness()
+        public void OpenKontrol()
         {
-            isSetting = false;
-            isBrightness = true;
-            isAudio = false;
+            isSettingsOpen = false;
+            isKontrolOpen = true;
+            isAboutOpen = false;
 
             settingsMenu.SetActive(false);
-            brightnessMenu.SetActive(true);
-            audioMenu.SetActive(false);
-        }
-
-        public void OpenAudio()
-        {
-            isSetting = false;
-            isBrightness = false;
-            isAudio = true;
-
-            settingsMenu.SetActive(false);
-            brightnessMenu.SetActive(false);
-            audioMenu.SetActive(true);
-        }
-
-        public void OpenGuide()
-        {
-            isSetting = false;
-            isBrightness = false;
-            isAudio = false;
-            isGuide = true;
-
-            settingsMenu.SetActive(false);
-            brightnessMenu.SetActive(false);
-            audioMenu.SetActive(false);
-            guideMenu.SetActive(true);
+            kotrolMenu.SetActive(true);
+            aboutUs.SetActive(false); 
         }
 
         public void OpenAbout()
         {
-            isSetting = false;
-            isBrightness = false;
-            isAudio = false;
-            isGuide = false;
-            isAbout = true;
+            isSettingsOpen = false;
+            isAboutOpen = true;
 
             settingsMenu.SetActive(false);
-            brightnessMenu.SetActive(false);
-            audioMenu.SetActive(false);
-            guideMenu.SetActive(false);
-            aboutMenu.SetActive(true);
+            aboutUs.SetActive(true);
         }
 
         public void CloseSettings()
         {
-            isSetting = false;
+            isSettingsOpen = false;
             settingsMenu.SetActive(false);
         }
-
-        public void CloseBrightness()
+        public void CloseKonrol()
         {
-            isBrightness = false;
-            brightnessMenu.SetActive(false);
+            isKontrolOpen = false;
+            kotrolMenu.SetActive(false);
+            
+            isSettingsOpen = true;
+            settingsMenu.SetActive(true);
         }
 
-        public void CloseAudio()
-        {
-            isAudio = false;
-            audioMenu.SetActive(false);
-        }
-
-        public void CloseGuide()
-        {
-            isGuide = false;
-            guideMenu.SetActive(false);
-        }
 
         public void CloseAbout()
         {
-            isAbout = false;
-            aboutMenu.SetActive(false);
+            isAboutOpen = false;
+            aboutUs.SetActive(false);
         }
 
-        public void NewGame()
+        public void HideAllPanels()
         {
-            // Implementation for starting a new game
+            isSettingsOpen = false;
+            isAboutOpen = false;
+
+            settingsMenu?.SetActive(false);
+            aboutUs?.SetActive(false);
         }
-
-        // public void ContinueGame()
-        // {
-        //     StartCoroutine(LoadGameCoroutine());
-        // }
-
-        // private IEnumerator LoadGameCoroutine()
-        // {
-        //   // Load the game data
-            
-        //     // Wait until the scene has loaded
-        //     AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("EastVillage");
-        //     while (!asyncLoad.isDone)
-        //     {
-        //         yield return null;
-        //     }
-        //     if (dataManager == null)
-        //     {
-        //         Debug.LogError("DataManager is null!");
-        //         yield break;
-        //     }
-        //     // Load the game data
-        //     dataManager.DataLoad();
-
-        //     // Set the player position after the scene has loaded
-        //     GameObject player = GameObject.FindWithTag("Player");
-        //     if (player != null)
-        //     {
-        //         player.transform.position = new Vector3(dataManager.datas.playerPosX, dataManager.datas.playerPosY, player.transform.position.z);
-        //     }
-        // }
-        public void BackToMainMenu()
-        {
-            isSetting = false;
-            isBrightness = false;
-            isAudio = false;
-            isGuide = false;
-            isAbout = false;
-
-            settingsMenu.SetActive(false);
-            brightnessMenu.SetActive(false);
-            audioMenu.SetActive(false);
-            guideMenu.SetActive(false);
-            aboutMenu.SetActive(false);
-        }
-
-
     }
 }
