@@ -860,6 +860,7 @@ MonoBehaviour:
   showDebug: 1
   forceRefreshKey: 286
   debugSaveFilesKey: 293
+  clearCorruptedDataKey: 290
 --- !u!1 &41492702
 GameObject:
   m_ObjectHideFlags: 0

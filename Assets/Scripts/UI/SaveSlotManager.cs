@@ -48,6 +48,12 @@ namespace DS.UI
         [Tooltip("Key to force refresh all slots")]
         [SerializeField] private KeyCode forceRefreshKey = KeyCode.F5;
         
+        [Tooltip("Key to debug save files")]
+        [SerializeField] private KeyCode debugSaveFilesKey = KeyCode.F12;
+        
+        [Tooltip("Key to clear corrupted save data")]
+        [SerializeField] private KeyCode clearCorruptedDataKey = KeyCode.F9;
+        
         // Events
         public event System.Action<int> OnNewGameSlotSelected;
         public event System.Action<int> OnLoadGameSlotSelected;
@@ -977,6 +983,18 @@ namespace DS.UI
             {
                 Debug.Log("★ F5 pressed - Force refreshing all slots!");
                 ForceRefreshNow();
+            }
+            
+            if (Input.GetKeyDown(debugSaveFilesKey))
+            {
+                Debug.Log("★ F12 pressed - Debugging save files!");
+                DebugSaveFiles();
+            }
+            
+            if (Input.GetKeyDown(clearCorruptedDataKey))
+            {
+                Debug.Log("★ F9 pressed - Clearing corrupted save data!");
+                ClearCorruptedSaveData();
             }
         }
         
