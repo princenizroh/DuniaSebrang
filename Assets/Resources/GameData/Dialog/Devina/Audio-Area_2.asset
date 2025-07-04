@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d4f200e077cbbb4286ff78870a34d60, type: 3}
+  m_Name: Audio-Area_2
+  m_EditorClassIdentifier: 
+  id: audio-area_2
+  dialogLines:
+  - id: 0
+    speakerName: Devina
+    text: Tempat apa itu... seperti taman bermain
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 1
+    speakerName: Devina
+    text: Ada seseorang di sana! Itu pasti Rara!
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 2
+    speakerName: Devina
+    text: Rara! Aku di sini! Jangan lari!
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 3
+    speakerName: Devina
+    text: Loh? Ke mana dia? Barusan ada di sini!
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 4
+    speakerName: Devina
+    text: Kok langsung hilang begitu... ini nggak masuk akal...
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 5
+    speakerName: Devina
+    text: Loh? Ayunannya gerak... ada yang aneh
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 6
+    speakerName: Devina
+    text: Jadi teringat saat aku main sama Rara
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 7
+    speakerName: Devina
+    text: Astaga! Itu apa? Tangan?!
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 8
+    speakerName: Devina
+    text: Kenapa ada tangan keluar dari tanah...
+    voiceClip: {fileID: 0}
+    duration: 3
+  oneTimePlay: 1

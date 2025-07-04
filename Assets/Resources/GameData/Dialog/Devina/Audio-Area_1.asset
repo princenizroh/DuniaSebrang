@@ -21,27 +21,27 @@ MonoBehaviour:
     duration: 3
   - id: 1
     speakerName: Devina
-    text: Haa anjing
+    text: Haa, anjing
     voiceClip: {fileID: 0}
     duration: 3
   - id: 2
     speakerName: Devina
-    text: Aku dengar suaranya tetapi tidak ada anjingnya.. beruntungnya aku
+    text: Aku dengar suaranya tapi nggak ada anjingnya... beruntung aku
     voiceClip: {fileID: 0}
     duration: 3
   - id: 3
     speakerName: Devina
-    text: Sepertinya aku tidak dikejar
+    text: Sepertinya aku nggak dikejar
     voiceClip: {fileID: 0}
     duration: 3
   - id: 4
     speakerName: Devina
-    text: Aku mendengar suara anjing lagi sepertinya tidak mengejar
+    text: Aku dengar suara anjing lagi, sepertinya nggak mengejar
     voiceClip: {fileID: 0}
     duration: 3
   - id: 5
     speakerName: Devina
-    text: Aku punya firasat buruk soal tempat ini
+    text: Aku punya firasat buruk soal tempat ini...
     voiceClip: {fileID: 0}
     duration: 3
   - id: 6

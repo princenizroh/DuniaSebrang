@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d4f200e077cbbb4286ff78870a34d60, type: 3}
+  m_Name: Audio-Area_3
+  m_EditorClassIdentifier: 
+  id: audio-area_3
+  dialogLines:
+  - id: 0
+    speakerName: Devina
+    text: Tempat ini kumuh sekali... bau apek
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 1
+    speakerName: Devina
+    text: Ini kayak lobby hotel ya? Tapi udah kayak rumah hantu
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 2
+    speakerName: Devina
+    text: Berapa lama ya tempat ini ditinggalkan...
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 3
+    speakerName: Devina
+    text: Eh... apa itu? Aku lihat ada yang berdiri
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 4
+    speakerName: Devina
+    text: Tadi aku lihat, kumuh sekali bajunya
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 5
+    speakerName: Devina
+    text: Rara, aku takut... kamu di mana...
+    voiceClip: {fileID: 0}
+    duration: 3
+  oneTimePlay: 1

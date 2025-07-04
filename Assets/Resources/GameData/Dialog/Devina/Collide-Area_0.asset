@@ -16,17 +16,17 @@ MonoBehaviour:
   dialogLines:
   - id: 0
     speakerName: Devina
-    text: Sepertinya terlalu seram untuk kesana
+    text: Sepertinya terlalu seram untuk ke sana
     voiceClip: {fileID: 0}
     duration: 3
   - id: 1
     speakerName: Devina
-    text: Aku takut untuk kesana
+    text: Aku takut ke sana
     voiceClip: {fileID: 0}
     duration: 3
   - id: 2
     speakerName: Devina
-    text: Sepertinya disana sangat berbahaya
+    text: Sepertinya di sana sangat berbahaya
     voiceClip: {fileID: 0}
     duration: 3
   - id: 3
@@ -36,7 +36,7 @@ MonoBehaviour:
     duration: 3
   - id: 4
     speakerName: Devina
-    text: Sepertinya disana tidak aman untuk dimasuki
+    text: Sepertinya di sana tidak aman untuk dimasuki
     voiceClip: {fileID: 0}
     duration: 3
   oneTimePlay: 1

@@ -16,17 +16,17 @@ MonoBehaviour:
   dialogLines:
   - id: 0
     speakerName: Devina
-    text: Rara.. Kamu merepotkanku hanya untuk mencarimu
+    text: Rara... kamu merepotkanku, cuma buat nyariin kamu
     voiceClip: {fileID: 0}
     duration: 3
   - id: 1
     speakerName: Devina
-    text: Rara kamu dimana sih..
+    text: Rara, kamu di mana sih...
     voiceClip: {fileID: 0}
     duration: 3
   - id: 2
     speakerName: Devina
-    text: Ihh Bau banget sampahnya mau muntah rasanya
+    text: Ihh, bau banget sampahnya. Mau muntah rasanya
     voiceClip: {fileID: 0}
     duration: 3
   - id: 3
@@ -36,17 +36,17 @@ MonoBehaviour:
     duration: 3
   - id: 4
     speakerName: Devina
-    text: Oh.. Sepertinya disana jalan keluarnya
+    text: Oh... sepertinya di sana jalan keluarnya
     voiceClip: {fileID: 0}
     duration: 3
   - id: 5
     speakerName: Devina
-    text: Dimana jalan keluarnya ya..
+    text: Di mana jalan keluarnya ya...
     voiceClip: {fileID: 0}
     duration: 3
   - id: 6
     speakerName: Devina
-    text: Tempat ini... seram sekali. Buluku merinding...
+    text: Tempat ini... seram sekali. Bulu kudukku merinding...
     voiceClip: {fileID: 0}
     duration: 3
   - id: 7
@@ -56,7 +56,7 @@ MonoBehaviour:
     duration: 3
   - id: 8
     speakerName: Devina
-    text: Kenapa hawanya dingin banget... ini gak enak...
+    text: Kenapa hawanya dingin banget... ini nggak enak...
     voiceClip: {fileID: 0}
     duration: 3
   - id: 9
@@ -66,7 +66,7 @@ MonoBehaviour:
     duration: 3
   - id: 10
     speakerName: Devina
-    text: Tenang Devina gak boleh panik... fokus cari dia.
+    text: Tenang, Devina. Nggak boleh panik... fokus cari dia.
     voiceClip: {fileID: 0}
     duration: 3
   oneTimePlay: 1
