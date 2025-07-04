@@ -16,10 +16,14 @@ namespace DS
             MusicManager.Instance.PlayMusic("MainMenu");
         }
     
-        public void Play()
-        {
-            MusicManager.Instance.PlayMusic("Game");
-        }
+    public void Play()
+    {
+        // Stop main menu music before starting game music
+        MusicManager.Instance.StopMusic();
+        
+        // Start game music
+        MusicManager.Instance.PlayMusic("Game");
+    }
     
         public void UpdateMusicVolume(float volume)
         {

@@ -34,8 +34,13 @@ namespace DS.UI
         [Tooltip("Save manager reference")]
         [SerializeField] private SaveManager saveManager;
         
+        [Tooltip("Confirmation dialog for slot conflicts (full UI)")]
+        [SerializeField] private SaveSlotConfirmationDialog confirmationDialog;
+        
+        [Tooltip("Simple confirmation dialog (fallback using Unity dialogs)")]
+        // [SerializeField] private SimpleConfirmationDialog simpleDialog;
+        
         [Header("=== NEW GAME SETTINGS ===")]
-        [Tooltip("Scene to load for new game")]
         [SerializeField] private string newGameScene = "GameScene";
         
         [Header("=== DEBUG ===")]
@@ -48,6 +53,9 @@ namespace DS.UI
         
         [Tooltip("Key to debug save files")]
         [SerializeField] private KeyCode debugSaveFilesKey = KeyCode.F12;
+        
+        [Tooltip("Key to clear corrupted save data")]
+        [SerializeField] private KeyCode clearCorruptedDataKey = KeyCode.F9;
         
         // Events
         public event System.Action<int> OnNewGameSlotSelected;
@@ -196,9 +204,20 @@ namespace DS.UI
                 if (File.Exists(filePath))
                 {
                     string json = File.ReadAllText(filePath);
+                    Debug.Log($"★ File content preview: {json.Substring(0, Mathf.Min(200, json.Length))}...");
+                    
                     SaveData saveData = JsonUtility.FromJson<SaveData>(json);
                     
-                    Debug.Log($"★ Found save data for slot {slotIndex}: Scene={saveData.playerData.currentScene}, Time={saveData.totalPlayTime}");
+                    // CRITICAL VALIDATION: Check if data belongs to the correct slot
+                    if (saveData.saveSlot != slotIndex)
+                    {
+                        Debug.LogError($"★ CRITICAL ERROR: File for slot {slotIndex} contains data for slot {saveData.saveSlot}!");
+                        Debug.LogError($"★ This file may be corrupted or misnamed: {filePath}");
+                        Debug.LogError($"★ Treating slot {slotIndex} as EMPTY to prevent wrong data display");
+                        return null;
+                    }
+                    
+                    Debug.Log($"★ Found valid save data for slot {slotIndex}: Scene={saveData.playerData.currentScene}, Time={saveData.totalPlayTime}");
                     return saveData;
                 }
                 else
@@ -262,23 +281,17 @@ namespace DS.UI
             bool actuallyEmpty = (slotData == null);
             Debug.Log($"★ Slot {slotIndex} data check: HasFile={!actuallyEmpty}");
             
-            if (clickedSlot.IsEmpty && actuallyEmpty)
+            if (actuallyEmpty)
             {
-                Debug.Log($"★ Slot {slotIndex} is empty - starting new game");
+                Debug.Log($"★ NEW GAME MODE: Slot {slotIndex} is empty - starting fresh new game");
                 // Empty slot - start new game immediately
                 StartNewGameInSlot(slotIndex);
             }
-            else if (!clickedSlot.IsEmpty || !actuallyEmpty)
-            {
-                Debug.Log($"★ Slot {slotIndex} has data - showing overwrite confirmation");
-                // Filled slot - show override confirmation
-                ShowOverwriteConfirmation(slotIndex);
-            }
             else
             {
-                Debug.LogWarning($"★ Slot {slotIndex} state mismatch: UI says empty={clickedSlot.IsEmpty}, but file exists={!actuallyEmpty}");
-                // Refresh the slot and try again
-                RefreshSlot(slotIndex);
+                Debug.Log($"★ NEW GAME MODE: Slot {slotIndex} has existing data - showing options");
+                // Slot has data - show user options: Continue existing or Start fresh
+                ShowNewGameSlotOptions(slotIndex, slotData);
             }
         }
         
@@ -291,15 +304,23 @@ namespace DS.UI
             
             SaveSlotUI clickedSlot = saveSlots[slotIndex];
             
-            if (!clickedSlot.IsEmpty)
+            // Double-check by loading data directly
+            SaveData slotData = LoadSaveDataForSlot(slotIndex);
+            bool hasData = (slotData != null);
+            
+            Debug.Log($"★ CONTINUE MODE: Slot {slotIndex} data check: HasFile={hasData}");
+            
+            if (hasData)
             {
-                // Filled slot - show load/delete options
-                ShowSaveSlotActions(slotIndex, clickedSlot.SlotSaveData);
+                Debug.Log($"★ CONTINUE MODE: Slot {slotIndex} has data - showing Load or Delete options");
+                // Has data - show Load or Delete dialog
+                ShowLoadOrDeleteDialog(slotIndex, slotData);
             }
             else
             {
-                // Empty slot - nothing to continue from
-                if (showDebug) Debug.Log($"Slot {slotIndex} is empty - cannot continue");
+                Debug.Log($"★ CONTINUE MODE: Slot {slotIndex} is empty - showing empty slot message");
+                // Empty slot - show message that there's nothing to continue
+                ShowEmptySlotMessage(slotIndex);
             }
         }
         
@@ -309,10 +330,13 @@ namespace DS.UI
         private void ShowOverwriteConfirmation(int slotIndex)
         {
             Debug.Log($"★ SHOWING OVERWRITE CONFIRMATION FOR SLOT {slotIndex} ★");
-            Debug.LogWarning($"★ SLOT {slotIndex} HAS DATA - PROCEEDING WITH OVERWRITE ★");
+            Debug.LogWarning($"★ SLOT {slotIndex} HAS DATA - SAFER TO SHOW OPTIONS FIRST ★");
             
-            // Just proceed with overwrite - no dialog needed for now
-            StartNewGameInSlot(slotIndex);
+            // Load existing data to show to user
+            SaveData existingData = LoadSaveDataForSlot(slotIndex);
+            
+            // Show options instead of immediately overwriting
+            ShowNewGameSlotOptions(slotIndex, existingData);
         }
         
         /// <summary>
@@ -386,7 +410,13 @@ namespace DS.UI
             if (showDebug) Debug.Log($"★★★ LOADING GAME FROM SLOT {slotIndex} ★★★");
             
             try
+            {            // Stop main menu music before loading game
+            if (DS.MusicManager.Instance != null)
             {
+                DS.MusicManager.Instance.StopMusic();
+                Debug.Log("★ Stopped main menu music before loading saved game");
+            }
+                
                 // Verify the slot has data first
                 SaveData slotData = LoadSaveDataForSlot(slotIndex);
                 if (slotData == null)
@@ -406,10 +436,24 @@ namespace DS.UI
                 
                 // Load from the slot
                 var loadMethod = saveManager.GetType().GetMethod("LoadFromSlot");
-                if (loadMethod != null)
+                var explicitLoadMethod = saveManager.GetType().GetMethod("ExplicitLoadGame");
+                
+                if (explicitLoadMethod != null || loadMethod != null)
                 {
                     Debug.Log($"★ Attempting to load from slot {slotIndex}...");
-                    bool loadSuccess = (bool)loadMethod.Invoke(saveManager, new object[] { slotIndex });
+                    bool loadSuccess = false;
+                    
+                    // Try explicit load method first (better for in-game loading)
+                    if (explicitLoadMethod != null)
+                    {
+                        Debug.Log("★ Using ExplicitLoadGame method");
+                        loadSuccess = (bool)explicitLoadMethod.Invoke(saveManager, null);
+                    }
+                    else if (loadMethod != null)
+                    {
+                        Debug.Log("★ Using LoadFromSlot method");
+                        loadSuccess = (bool)loadMethod.Invoke(saveManager, new object[] { slotIndex });
+                    }
                     
                     if (loadSuccess)
                     {
@@ -513,8 +557,9 @@ namespace DS.UI
                 Debug.Log("★ IMMEDIATE REFRESH - After new game creation:");
                 RefreshSaveSlots();
                 
-                // Force refresh slots to show the new save with delay
-                ForceRefreshAllSlots();
+                // Force refresh slots WITHOUT coroutine (since panel might be inactive)
+                Debug.Log("★ Final refresh without coroutine...");
+                RefreshSaveSlots();
                 
                 // Load the game scene
                 LoadNewGameScene();
@@ -542,6 +587,20 @@ namespace DS.UI
             }
             
             if (showDebug) Debug.Log($"Loading new game scene: {newGameScene}");
+            
+            // Stop main menu music before loading game
+            try
+            {
+                if (DS.MusicManager.Instance != null)
+                {
+                    DS.MusicManager.Instance.StopMusic();
+                    Debug.Log("★ Stopped main menu music before loading game");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"★ Could not stop music: {e.Message}");
+            }
             
             // Try to use loading screen for smooth transition
             MonoBehaviour loadingScreen = null;
@@ -631,10 +690,35 @@ namespace DS.UI
         /// </summary>
         public SaveSlotInfo GetEnhancedSaveSlotInfo(int slotIndex)
         {
+            Debug.Log($"★ GetEnhancedSaveSlotInfo called for slot {slotIndex}");
+            
             SaveData saveData = LoadSaveDataForSlot(slotIndex);
             
             if (saveData == null)
             {
+                Debug.Log($"★ Slot {slotIndex} is EMPTY - returning empty slot info");
+                return new SaveSlotInfo
+                {
+                    slotIndex = slotIndex,
+                    isEmpty = true,
+                    areaName = "Empty",
+                    playTime = 0f,
+                    saveDateTime = "",
+                    lastSavePlayTime = 0f,
+                    lastSaveDateTime = ""
+                };
+            }
+            
+            Debug.Log($"★ Slot {slotIndex} has DATA - processing save data");
+            Debug.Log($"★ Save data details: Scene={saveData.playerData?.currentScene ?? "NULL"}, TotalTime={saveData.totalPlayTime}, CheckpointId={saveData.checkpointData?.lastCheckpointId ?? "NULL"}");
+            
+            // IMPORTANT: Verify this is actually the correct slot's data
+            if (saveData.saveSlot != slotIndex)
+            {
+                Debug.LogError($"★ DATA MISMATCH! File claims to be slot {saveData.saveSlot} but we're loading for slot {slotIndex}!");
+                Debug.LogError($"★ This might be the cause of wrong data showing up!");
+                
+                // Return empty if data doesn't match expected slot
                 return new SaveSlotInfo
                 {
                     slotIndex = slotIndex,
@@ -688,8 +772,17 @@ namespace DS.UI
         {
             Debug.Log("★★★ FORCE REFRESHING ALL SLOTS ★★★");
             
-            // Add small delay to ensure file operations are complete
-            StartCoroutine(DelayedRefresh());
+            // Check if gameObject is active before starting coroutine
+            if (gameObject.activeInHierarchy)
+            {
+                // Add small delay to ensure file operations are complete
+                StartCoroutine(DelayedRefresh());
+            }
+            else
+            {
+                Debug.LogWarning("★ GameObject inactive - doing immediate refresh instead of coroutine");
+                RefreshSaveSlots();
+            }
         }
         
         private System.Collections.IEnumerator DelayedRefresh()
@@ -952,6 +1045,12 @@ namespace DS.UI
                 Debug.Log("★ F12 pressed - Debugging save files!");
                 DebugSaveFiles();
             }
+            
+            if (Input.GetKeyDown(clearCorruptedDataKey))
+            {
+                Debug.Log("★ F9 pressed - Clearing corrupted save data!");
+                ClearCorruptedSaveData();
+            }
         }
         
         /// <summary>
@@ -1079,6 +1178,429 @@ namespace DS.UI
             {
                 Debug.LogError($"★ Error debugging SaveManager: {e.Message}");
             }
+        }
+        
+        /// <summary>
+        /// Show options for New Game when slot has existing data
+        /// </summary>
+        private void ShowNewGameSlotOptions(int slotIndex, SaveData existingData)
+        {
+            Debug.Log($"★ SHOWING NEW GAME OPTIONS FOR SLOT {slotIndex} ★");
+            
+            // For now, provide 3 clear options through debug logs
+            // Create slot info for dialog
+            var slotInfo = new SaveSlotInfo
+            {
+                slotIndex = slotIndex,
+                isEmpty = false,
+                areaName = GetAreaNameFromSaveData(existingData),
+                playTime = existingData.totalPlayTime,
+                saveDateTime = existingData.saveTime.ToString("yyyy-MM-dd HH:mm:ss")
+            };
+            
+            // Try to use confirmation dialog if available (Priority 1: Full UI Dialog)
+            if (confirmationDialog != null)
+            {
+                Debug.Log("★ Using SaveSlotConfirmationDialog (Full UI)");
+                confirmationDialog.ShowNewGameConflictDialog(slotIndex, slotInfo,
+                    onContinue: () => SafeContinueExistingGame(slotIndex),
+                    onStartFresh: () => ForceStartNewGameInSlot(slotIndex),
+                    onCancel: () => { /* user cancelled */ });
+                return;
+            }
+            
+            // Try simple dialog as fallback (Priority 2: Unity Built-in Dialog)
+            // if (simpleDialog != null)
+            // {
+            //     Debug.Log("★ Using SimpleConfirmationDialog (Unity Built-in)");
+            //     simpleDialog.ShowNewGameConflictDialog(slotIndex, slotInfo,
+            //         onContinue: () => SafeContinueExistingGame(slotIndex),
+            //         onStartFresh: () => ForceStartNewGameInSlot(slotIndex),
+            //         onCancel: () => { /* user cancelled */ });
+            //     return;
+            // }
+            
+            // Fallback 3: Use Unity's built-in dialog (Editor only)
+            #if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                Debug.Log("★ Using Unity EditorUtility dialog (Editor only)");
+                
+                string title = $"Slot {slotIndex + 1} Sudah Berisi Data";
+                string message = $"Slot ini berisi:\n\n" +
+                               $"Area: {slotInfo.areaName}\n" +
+                               $"Waktu Main: {FormatPlayTime(slotInfo.playTime)}\n" +
+                               $"Terakhir Disimpan: {slotInfo.saveDateTime}\n\n" +
+                               $"Apa yang ingin Anda lakukan?";
+                
+                int choice = UnityEditor.EditorUtility.DisplayDialogComplex(
+                    title,
+                    message,
+                    "Lanjutkan Game yang Ada",  // option 0
+                    "Batal",                    // option 1  
+                    "Mulai Baru (Hapus Data)"   // option 2
+                );
+                
+                switch (choice)
+                {
+                    case 0: // Continue
+                        Debug.Log("★ User chose: Continue Existing Game");
+                        SafeContinueExistingGame(slotIndex);
+                        break;
+                    case 1: // Cancel
+                        Debug.Log("★ User chose: Cancel");
+                        break;
+                    case 2: // Start Fresh
+                        Debug.Log("★ User chose: Start Fresh");
+                        ForceStartNewGameInSlot(slotIndex);
+                        break;
+                }
+                return;
+            }
+            #endif
+            
+            // Fallback: Log-based approach for development/testing
+            Debug.LogWarning("★ CONFIRMATION DIALOG NOT ASSIGNED - Using fallback behavior");
+            Debug.Log($"★ Slot {slotIndex} contains existing save data:");
+            Debug.Log($"  - Area: {slotInfo.areaName}");
+            Debug.Log($"  - Play Time: {FormatPlayTime(slotInfo.playTime)}");
+            Debug.Log($"  - Last Saved: {slotInfo.saveDateTime}");
+            Debug.Log($"★ Available options:");
+            Debug.Log($"  1. CONTINUE EXISTING - Load and continue the existing game");
+            Debug.Log($"  2. START FRESH - Delete existing data and start completely new game");
+            Debug.Log($"  3. CANCEL - Go back without doing anything");
+            
+            // Temporary implementation for testing - you can modify this behavior:
+            // Option A: Default to safer choice (continue existing to prevent data loss)
+            // Option B: Ask user to implement UI dialog
+            // Option C: Provide keyboard/console input for testing
+            
+            Debug.LogWarning($"★ TEMPORARY BEHAVIOR: Defaulting to CONTINUE EXISTING to prevent accidental data loss");
+            Debug.LogWarning($"★ TO TEST NEW GAME: Call ForceStartNewGameInSlot({slotIndex}) directly");
+            Debug.LogWarning($"★ TO IMPLEMENT UI: Uncomment dialog code above and assign confirmationDialog in inspector");
+            
+            // For safety, default to continuing existing game
+            SafeContinueExistingGame(slotIndex);
+        }
+        
+        /// <summary>
+        /// Show message when trying to continue from empty slot
+        /// </summary>
+        private void ShowEmptySlotMessage(int slotIndex)
+        {
+            // Try to use confirmation dialog if available (Priority 1: Full UI Dialog)
+            if (confirmationDialog != null)
+            {
+                Debug.Log("★ Using SaveSlotConfirmationDialog for empty slot message");
+                confirmationDialog.ShowEmptySlotDialog(slotIndex,
+                    onCancel: () => { /* user acknowledged empty slot */ });
+                return;
+            }
+            
+            // Try simple dialog as fallback (Priority 2: Unity Built-in Dialog)  
+            // if (simpleDialog != null)
+            // {
+            //     Debug.Log("★ Using SimpleConfirmationDialog for empty slot message");
+            //     simpleDialog.ShowEmptySlotDialog(slotIndex,
+            //         onCancel: () => { /* user acknowledged empty slot */ });
+            //     return;
+            // }
+            
+            // Fallback 3: Use Unity's built-in dialog (Editor only)
+            #if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                Debug.Log("★ Using Unity EditorUtility for empty slot message");
+                
+                string title = $"Slot {slotIndex + 1} Kosong";
+                string message = $"Slot ini tidak berisi data game.\n\n" +
+                               $"Coba pilih 'Mulai Permainan' untuk memulai game baru,\n" +
+                               $"atau pilih slot lain yang berisi save data.";
+                
+                UnityEditor.EditorUtility.DisplayDialog(title, message, "OK");
+                return;
+            }
+            #endif
+            
+            // Fallback: Log-based approach for development/testing
+            Debug.LogWarning("★ CONFIRMATION DIALOG NOT ASSIGNED - Using fallback behavior");
+            Debug.Log($"★ SHOWING EMPTY SLOT MESSAGE FOR SLOT {slotIndex} ★");
+            Debug.LogWarning($"★ Slot {slotIndex} is empty - nothing to continue from!");
+            Debug.Log($"★ Suggestions for user:");
+            Debug.Log($"  1. Switch to NEW GAME mode to start a fresh game");
+            Debug.Log($"  2. Select a different slot that has save data");
+            Debug.Log($"  3. Go back to main menu");
+            
+            // For now, just log the message
+            // TODO: Replace with actual UI implementation
+            // In a real implementation, you'd show a dialog or notification
+            // ShowEmptySlotDialog(slotIndex);
+        }
+        
+        /// <summary>
+        /// Show Load or Delete dialog for occupied slot in Continue mode
+        /// </summary>
+        private void ShowLoadOrDeleteDialog(int slotIndex, SaveData existingData)
+        {
+            Debug.Log($"★ SHOWING LOAD OR DELETE DIALOG FOR SLOT {slotIndex} ★");
+            
+            // Try to use confirmation dialog if available
+            if (confirmationDialog != null)
+            {
+                Debug.Log("★ Using SaveSlotConfirmationDialog for Load or Delete options");
+                confirmationDialog.ShowLoadOrDeleteDialog(slotIndex, 
+                    existingData: CreateSlotInfoFromSaveData(existingData),
+                    onLoad: () => {
+                        Debug.Log($"★ User chose: LOAD from slot {slotIndex}");
+                        LoadGameFromSlot(slotIndex);
+                    },
+                    onDelete: () => {
+                        Debug.Log($"★ User chose: DELETE slot {slotIndex}");
+                        DeleteSlotData(slotIndex);
+                    },
+                    onCancel: () => {
+                        Debug.Log($"★ User cancelled Load or Delete dialog");
+                    });
+                return;
+            }
+            
+            // Fallback: Use Unity's built-in dialog (Editor only)
+            #if UNITY_EDITOR
+            Debug.Log("★ Fallback: Using EditorUtility dialog for Load or Delete");
+            
+            int choice = UnityEditor.EditorUtility.DisplayDialogComplex(
+                "Load atau Delete?",
+                $"Slot {slotIndex + 1} berisi data game.\n\nPilih aksi:",
+                "Load", // 0
+                "Delete", // 1
+                "Batal" // 2
+            );
+            
+            switch (choice)
+            {
+                case 0: // Load
+                    Debug.Log("★ User chose: Load");
+                    LoadGameFromSlot(slotIndex);
+                    break;
+                case 1: // Delete
+                    Debug.Log("★ User chose: Delete");
+                    DeleteSlotData(slotIndex);
+                    break;
+                case 2: // Cancel
+                default:
+                    Debug.Log("★ User chose: Cancel");
+                    break;
+            }
+            #else
+            Debug.LogWarning("★ No confirmation dialog available in build! Defaulting to Load");
+            LoadGameFromSlot(slotIndex);
+            #endif
+        }
+
+        /// <summary>
+        /// Delete save data for specific slot and refresh UI
+        /// </summary>
+        private void DeleteSlotData(int slotIndex)
+        {
+            if (saveManager == null)
+            {
+                Debug.LogError("★ SaveManager not found - cannot delete slot data");
+                return;
+            }
+            
+            Debug.Log($"★ DELETING SLOT {slotIndex} DATA ★");
+            
+            // Delete the save slot using SaveManager
+            bool success = saveManager.DeleteSaveSlot(slotIndex);
+            
+            if (success)
+            {
+                Debug.Log($"★ Successfully deleted slot {slotIndex} data");
+                
+                // Refresh the UI to reflect changes
+                RefreshSaveSlots();
+                
+                // Show confirmation message
+                if (confirmationDialog != null)
+                {
+                    confirmationDialog.ShowErrorDialog(
+                        "Data Dihapus",
+                        $"Data di Slot {slotIndex + 1} berhasil dihapus.",
+                        onOK: () => { /* user acknowledged deletion */ }
+                    );
+                }
+            }
+            else
+            {
+                Debug.LogError($"★ Failed to delete slot {slotIndex} data");
+                
+                // Show error message
+                if (confirmationDialog != null)
+                {
+                    confirmationDialog.ShowErrorDialog(
+                        "Error",
+                        $"Gagal menghapus data di Slot {slotIndex + 1}.",
+                        onOK: () => { /* user acknowledged error */ }
+                    );
+                }
+            }
+        }
+
+        /// <summary>
+        /// Create SaveSlotInfo from SaveData for dialog display
+        /// </summary>
+        private SaveSlotInfo CreateSlotInfoFromSaveData(SaveData saveData)
+        {
+            if (saveData == null) 
+            {
+                return new SaveSlotInfo
+                {
+                    slotIndex = -1,
+                    isEmpty = true,
+                    areaName = "Empty",
+                    playTime = 0f,
+                    saveDateTime = "",
+                    lastSavePlayTime = 0f,
+                    lastSaveDateTime = ""
+                };
+            }
+            
+            return new SaveSlotInfo
+            {
+                slotIndex = saveData.saveSlot,
+                isEmpty = false,
+                areaName = saveData.checkpointData?.lastCheckpointScene ?? saveData.playerData?.currentScene ?? "Unknown Area",
+                playTime = saveData.totalPlayTime,
+                saveDateTime = saveData.saveTime.ToString("dd/MM/yyyy HH:mm"),
+                lastSavePlayTime = saveData.totalPlayTime,
+                lastSaveDateTime = saveData.lastCheckpointTime.ToString("dd/MM/yyyy HH:mm")
+            };
+        }
+        
+        /// <summary>
+        /// Format play time for display
+        /// </summary>
+        private string FormatPlayTime(float totalSeconds)
+        {
+            int hours = Mathf.FloorToInt(totalSeconds / 3600f);
+            int minutes = Mathf.FloorToInt((totalSeconds % 3600f) / 60f);
+            int seconds = Mathf.FloorToInt(totalSeconds % 60f);
+            
+            if (hours > 0)
+                return $"{hours:00}:{minutes:00}:{seconds:00}";
+            else
+                return $"{minutes:00}:{seconds:00}";
+        }
+
+        /// <summary>
+        /// Get area name from save data for display
+        /// </summary>
+        private string GetAreaNameFromSaveData(SaveData saveData)
+        {
+            if (saveData == null) return "Unknown";
+            
+            // Try checkpoint scene first, then player current scene
+            string areaName = saveData.checkpointData?.lastCheckpointScene ?? 
+                             saveData.playerData?.currentScene ?? "Unknown Area";
+            
+            // Clean up scene name for display
+            if (areaName.Contains("/"))
+                areaName = System.IO.Path.GetFileNameWithoutExtension(areaName);
+            
+            return areaName;
+        }
+
+        /// <summary>
+        /// Safely continue existing game - load and start
+        /// </summary>
+        private void SafeContinueExistingGame(int slotIndex)
+        {
+            Debug.Log($"★ SAFELY CONTINUING EXISTING GAME IN SLOT {slotIndex} ★");
+            LoadGameFromSlot(slotIndex);
+        }
+
+        /// <summary>
+        /// Force start new game in slot - overwrite existing data
+        /// </summary>
+        private void ForceStartNewGameInSlot(int slotIndex)
+        {
+            Debug.Log($"★ FORCE STARTING NEW GAME IN SLOT {slotIndex} (OVERWRITE) ★");
+            StartNewGameInSlot(slotIndex);
+        }
+
+        /// <summary>
+        /// Clear corrupted or mismatched save data
+        /// </summary>
+        [ContextMenu("Clear All Corrupted Save Data")]
+        public void ClearCorruptedSaveData()
+        {
+            Debug.Log("★★★ CLEARING CORRUPTED SAVE DATA ★★★");
+            
+            if (saveManager == null)
+            {
+                Debug.LogError("★ SaveManager not found!");
+                return;
+            }
+            
+            string saveDirectory = saveManager.SaveDirectory;
+            if (!Directory.Exists(saveDirectory))
+            {
+                Debug.Log("★ Save directory doesn't exist - nothing to clear");
+                return;
+            }
+            
+            string[] saveFiles = Directory.GetFiles(saveDirectory, "DuniaSebrang_Save_Slot*.json");
+            List<string> corruptedFiles = new List<string>();
+            
+            foreach (string filePath in saveFiles)
+            {
+                try
+                {
+                    // Extract expected slot index from filename
+                    string fileName = Path.GetFileNameWithoutExtension(filePath);
+                    string slotPart = fileName.Substring(fileName.LastIndexOf("Slot") + 4);
+                    int expectedSlot = int.Parse(slotPart);
+                    
+                    // Read and validate file content
+                    string json = File.ReadAllText(filePath);
+                    SaveData saveData = JsonUtility.FromJson<SaveData>(json);
+                    
+                    if (saveData.saveSlot != expectedSlot)
+                    {
+                        Debug.LogError($"★ CORRUPTED FILE DETECTED: {fileName}");
+                        Debug.LogError($"★ File claims slot {saveData.saveSlot}, expected slot {expectedSlot}");
+                        corruptedFiles.Add(filePath);
+                    }
+                    else
+                    {
+                        Debug.Log($"★ File OK: {fileName} (slot {saveData.saveSlot})");
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"★ Error checking file {filePath}: {e.Message}");
+                    corruptedFiles.Add(filePath);
+                }
+            }
+            
+            // Delete corrupted files
+            foreach (string corruptedFile in corruptedFiles)
+            {
+                try
+                {
+                    File.Delete(corruptedFile);
+                    Debug.Log($"★ DELETED corrupted file: {Path.GetFileName(corruptedFile)}");
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"★ Failed to delete {corruptedFile}: {e.Message}");
+                }
+            }
+            
+            Debug.Log($"★ Cleared {corruptedFiles.Count} corrupted files");
+            
+            // Force refresh after clearing
+            RefreshSaveSlots();
         }
     }
 }

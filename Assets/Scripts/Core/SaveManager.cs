@@ -121,7 +121,18 @@ namespace DS
                 return;
             }
             
-            // Only load existing save if we're not in skip mode
+            // PREVENT AUTO-LOADING IN MAIN MENU SCENE
+            string currentScene = SceneManager.GetActiveScene().name;
+            if (currentScene.Contains("MainMenu") || currentScene.Contains("Menu"))
+            {
+                if (showDebug) Debug.Log($"★ Start() - SKIPPING auto-load (in main menu scene: {currentScene})");
+                
+                // Just start time tracking, don't load anything
+                StartTimeTracking();
+                return;
+            }
+            
+            // Only load existing save if we're not in skip mode AND not in main menu
             if (!skipAutoLoadOnStart)
             {
                 if (showDebug) Debug.Log($"★ Start() - Loading existing save for slot {currentSaveSlot}");
@@ -1487,6 +1498,41 @@ namespace DS
             
             if (showDebug) Debug.Log($"★ ForceLoadFromSlot: Loading from slot {slot}");
             return LoadFromSlot(slot);
+        }
+        
+        /// <summary>
+        /// Explicitly load save data (for in-game use)
+        /// Call this when actually entering game scene
+        /// </summary>
+        public bool ExplicitLoadGame()
+        {
+            if (showDebug) Debug.Log($"★ ExplicitLoadGame called for slot {currentSaveSlot}");
+            
+            // Don't load if we're creating a new game
+            if (isCreatingNewGame)
+            {
+                if (showDebug) Debug.Log("★ Skipping explicit load - creating new game");
+                return false;
+            }
+            
+            return LoadGame();
+        }
+
+        /// <summary>
+        /// Check if SaveManager should be active in current scene
+        /// </summary>
+        public bool ShouldBeActiveInCurrentScene()
+        {
+            string currentScene = SceneManager.GetActiveScene().name;
+            
+            // Don't be active in main menu scenes
+            if (currentScene.Contains("MainMenu") || currentScene.Contains("Menu"))
+            {
+                return false;
+            }
+            
+            // Be active in game scenes
+            return true;
         }
     }
 }

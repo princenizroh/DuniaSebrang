@@ -42,6 +42,28 @@ namespace DS
             // Auto-find SaveSlotManager if not assigned
             if (saveSlotManager == null)
                 saveSlotManager = FindFirstObjectByType<SaveSlotManager>();
+                
+            // Setup SaveSlotManager event handlers
+            SetupSaveSlotEvents();
+        }
+        
+        /// <summary>
+        /// Setup event handlers for SaveSlotManager
+        /// </summary>
+        private void SetupSaveSlotEvents()
+        {
+            if (saveSlotManager != null)
+            {
+                // Subscribe to slot selection events
+                saveSlotManager.OnNewGameSlotSelected += OnNewGameStartedInSlot;
+                saveSlotManager.OnLoadGameSlotSelected += OnGameLoadedFromSlot;
+                
+                Debug.Log("★ SaveSlotManager events connected to MainMenu");
+            }
+            else
+            {
+                Debug.LogWarning("★ SaveSlotManager not found, events not connected");
+            }
         }
 
         private void Update()
@@ -207,15 +229,121 @@ namespace DS
         /// </summary>
         public void OnLanjutkanClicked()
         {
+            Debug.Log("★ LANJUTKAN clicked!");
+            
             // Open save slot selection in Continue mode
             if (saveSlotManager != null)
             {
+                Debug.Log("★ SaveSlotManager found, setting to Continue mode");
                 saveSlotManager.SetMode(SaveSlotManager.SlotSelectionMode.Continue);
                 saveSlotManager.RefreshSaveSlots();
+            }
+            else
+            {
+                Debug.LogError("★ SaveSlotManager NOT FOUND!");
             }
             
             // Open data save game panel
             OpenDataSaveGame();
+            Debug.Log("★ Data save game panel opened in Continue mode");
+        }
+        
+        /// <summary>
+        /// Check if there's any save data available for continue option
+        /// </summary>
+        public bool HasAnySaveData()
+        {
+            if (saveSlotManager == null) return false;
+            
+            // Check all slots for data (assuming 5 slots max)
+            for (int i = 0; i < 5; i++)
+            {
+                var slotInfo = saveSlotManager.GetEnhancedSaveSlotInfo(i);
+                if (!slotInfo.isEmpty)
+                {
+                    Debug.Log($"★ Found save data in slot {i}: {slotInfo.areaName}");
+                    return true;
+                }
+            }
+            
+            Debug.Log("★ No save data found in any slot");
+            return false;
+        }
+        
+        /// <summary>
+        /// Update continue button availability based on save data
+        /// Call this method to enable/disable continue button
+        /// </summary>
+        public void UpdateContinueButtonState()
+        {
+            // This method can be called from UI to update button state
+            bool hasData = HasAnySaveData();
+            Debug.Log($"★ Continue button should be {(hasData ? "ENABLED" : "DISABLED")}");
+            
+            // You can add UI update logic here if needed
+            // For example: continueButton.interactable = hasData;
+        }
+        
+        /// <summary>
+        /// Close data save game panel and return to main menu
+        /// </summary>
+        public void OnBackToMainMenuFromSlots()
+        {
+            Debug.Log("★ BACK TO MAIN MENU from save slots");
+            
+            // Force close any open confirmation dialogs
+            if (saveSlotManager != null)
+            {
+                // Try to find and close confirmation dialog
+                var confirmationDialog = FindFirstObjectByType<SaveSlotConfirmationDialog>();
+                if (confirmationDialog != null)
+                {
+                    confirmationDialog.ForceCloseDialog();
+                    Debug.Log("★ Forced close confirmation dialog");
+                }
+            }
+            
+            // Close data save game panel
+            CloseDataSaveGame();
+            
+            // Show main menu panel
+            OpenMainMenuPanel();
+        }
+        
+        /// <summary>
+        /// Handle when a game is successfully loaded from slot
+        /// </summary>
+        public void OnGameLoadedFromSlot(int slotIndex)
+        {
+            Debug.Log($"★ Game loaded successfully from slot {slotIndex}");
+            
+            // Close all menu panels since game is starting
+            HideAllPanels();
+            CloseDataSaveGame();
+            CloseMainMenuPanel();
+        }
+        
+        /// <summary>
+        /// Handle when a new game is started in slot
+        /// </summary>
+        public void OnNewGameStartedInSlot(int slotIndex)
+        {
+            Debug.Log($"★ New game started successfully in slot {slotIndex}");
+            
+            // Close all menu panels since game is starting
+            HideAllPanels();
+            CloseDataSaveGame();
+            CloseMainMenuPanel();
+        }
+
+        private void OnDestroy()
+        {
+            // Cleanup event subscriptions
+            if (saveSlotManager != null)
+            {
+                saveSlotManager.OnNewGameSlotSelected -= OnNewGameStartedInSlot;
+                saveSlotManager.OnLoadGameSlotSelected -= OnGameLoadedFromSlot;
+            }
         }
     }
 }

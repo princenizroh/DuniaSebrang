@@ -52,5 +52,26 @@ namespace DS
                 yield return null;
             }
         }
+
+        public void StopMusic(float fadeDuration = 0.5f)
+        {
+            StartCoroutine(AnimateMusicFadeOut(fadeDuration));
+        }
+        
+        IEnumerator AnimateMusicFadeOut(float fadeDuration = 0.5f)
+        {
+            float startVolume = musicSource.volume;
+            float percent = 0;
+            
+            while (percent < 1)
+            {
+                percent += Time.deltaTime * 1 / fadeDuration;
+                musicSource.volume = Mathf.Lerp(startVolume, 0, percent);
+                yield return null;
+            }
+            
+            musicSource.Stop();
+            musicSource.volume = 1f; // Reset volume for next track
+        }
     }
 }
