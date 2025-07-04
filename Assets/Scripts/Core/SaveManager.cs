@@ -529,36 +529,72 @@ namespace DS
                 Debug.LogError("SaveManager: Cannot respawn - checkpoint is null!");
                 return;
             }
+
+            if (showDebug) Debug.Log($"★★★ RESPAWNING AT CHECKPOINT: {checkpoint.checkpointName} ★★★");
+
+            // CRITICAL: Validate scene name before any scene loading
+            string currentSceneName = SceneManager.GetActiveScene().name;
             
-            if (showDebug) Debug.Log($"Respawning at checkpoint: {checkpoint.checkpointName}");
+            if (showDebug) Debug.Log($"🎬 Current Scene: '{currentSceneName}'");
+            if (showDebug) Debug.Log($"🎯 Checkpoint Scene: '{checkpoint.sceneName}'");
             
-            // Load scene if different
-            if (!string.IsNullOrEmpty(checkpoint.sceneName) && 
-                SceneManager.GetActiveScene().name != checkpoint.sceneName)
+            // PREVENT MAIN MENU LOADING
+            if (!string.IsNullOrEmpty(checkpoint.sceneName))
             {
-                SceneManager.LoadScene(checkpoint.sceneName);
+                string checkpointSceneLower = checkpoint.sceneName.ToLower();
+                if (checkpointSceneLower.Contains("menu") || checkpointSceneLower.Contains("main"))
+                {
+                    Debug.LogError($"❌ CRITICAL ERROR: Checkpoint points to menu scene '{checkpoint.sceneName}'!");
+                    Debug.LogError($"❌ BLOCKING scene load to prevent going to main menu!");
+                    Debug.LogError($"❌ FIX: Update CheckpointData '{checkpoint.checkpointName}' sceneName to current game scene!");
+                    
+                    // Force use current scene instead
+                    checkpoint.sceneName = currentSceneName;
+                    Debug.LogWarning($"⚠️ TEMPORARY FIX: Using current scene '{currentSceneName}' for respawn");
+                }
+                
+                // Check if scene change is really needed
+                if (currentSceneName != checkpoint.sceneName)
+                {
+                    Debug.LogError($"❌ WARNING: Scene change required from '{currentSceneName}' to '{checkpoint.sceneName}'");
+                    Debug.LogError($"❌ This might be the source of main menu issue!");
+                    Debug.LogError($"❌ Recommended: Set checkpoint.sceneName = '{currentSceneName}'");
+                    
+                    // EMERGENCY PREVENTION: Don't load scene if it might be main menu
+                    if (checkpoint.sceneName != currentSceneName)
+                    {
+                        Debug.LogError($"❌ EMERGENCY PREVENTION: Blocking scene load to '{checkpoint.sceneName}'");
+                        Debug.LogError($"❌ Respawning in current scene instead");
+                        // Don't call SceneManager.LoadScene() - this is what causes main menu issue!
+                    }
+                }
+                else
+                {
+                    if (showDebug) Debug.Log($"✅ Same scene respawn: {currentSceneName}");
+                }
             }
-            
-            // DON'T reset player state here - it will interrupt fade-out
-            // The PlayerDeathHandler will handle the reset after fade-out is complete
-            // if (playerDeathHandler != null)
-            // {
-            //     playerDeathHandler.ResetPlayer();
-            // }
-            
-            // Move player to checkpoint position FIRST
+            else
+            {
+                Debug.LogWarning("⚠️ Checkpoint sceneName is empty - using current scene");
+            }
+
+            // Move player to checkpoint position (THIS is what we want, not scene loading)
             if (player != null)
             {
                 player.transform.position = checkpoint.spawnPosition;
                 player.transform.eulerAngles = checkpoint.spawnRotation;
                 
-                if (showDebug) Debug.Log($"Player moved to checkpoint position: {checkpoint.spawnPosition}");
+                if (showDebug) Debug.Log($"★ Player moved to checkpoint: {checkpoint.spawnPosition}");
             }
-            
+            else
+            {
+                Debug.LogError("SaveManager: Cannot respawn - player reference is null!");
+            }
+
             // Update current checkpoint
             currentCheckpoint = checkpoint;
             
-            if (showDebug) Debug.Log("★ Respawn positioning complete - PlayerDeathHandler will handle state reset after fade-out");
+            if (showDebug) Debug.Log("★★★ RESPAWN POSITIONING COMPLETE ★★★");
         }
         
         #endregion

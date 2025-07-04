@@ -17,8 +17,8 @@ MonoBehaviour:
   description: 
   spawnPosition: {x: 3.880005, y: 1.23, z: 4.959999}
   spawnRotation: {x: -0, y: 0, z: 0}
-  sceneName: MainMenu
+  sceneName: Level-1
   saveAudioData: {fileID: 0}
   areaName: FSAF
-  lastSavePlayTime: 4.0429406
-  lastSaveDateTime: 2025-07-05 00:29:59
+  lastSavePlayTime: 76.4068
+  lastSaveDateTime: 2025-07-05 02:13:00

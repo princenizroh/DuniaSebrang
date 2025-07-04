@@ -26546,8 +26546,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1469426624}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.060176466, y: 0.43830216, z: -0.029426122, w: -0.8963282}
-  m_LocalPosition: {x: 3.562, y: 4.089, z: -1.294}
+  m_LocalRotation: {x: 0, y: -0.014407161, z: 0, w: 0.9998963}
+  m_LocalPosition: {x: -1.706, y: 2.421, z: 4.159}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -29720,6 +29720,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1623079533}
   - component: {fileID: 1623079534}
+  - component: {fileID: 1623079535}
   m_Layer: 0
   m_Name: SaveManager
   m_TagString: Untagged
@@ -29763,6 +29764,18 @@ MonoBehaviour:
   playerDeathHandler: {fileID: 0}
   showDebug: 0
   enableDebugGUI: 0
+--- !u!114 &1623079535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1623079532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e746e175db213934aa2d68d1f59f9b0f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1624134982
 GameObject:
   m_ObjectHideFlags: 0

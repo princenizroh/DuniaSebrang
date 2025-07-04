@@ -21,7 +21,7 @@ MonoBehaviour:
     duration: 3
   - id: 1
     speakerName: Devina
-    text: Rara kamu dimana sih..f
+    text: Rara kamu dimana sih..
     voiceClip: {fileID: 0}
     duration: 3
   - id: 2
@@ -46,7 +46,7 @@ MonoBehaviour:
     duration: 3
   - id: 6
     speakerName: Devina
-    text: Tempat ini... gelap banget. Bukan hutan biasa...
+    text: Tempat ini... seram sekali. Buluku merinding...
     voiceClip: {fileID: 0}
     duration: 3
   - id: 7

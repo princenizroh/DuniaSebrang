@@ -492,7 +492,10 @@ namespace DS
         protected virtual void OnDeathFadeComplete()
         {
             // This can be overridden or events can be subscribed to
-            if (showDebug) Debug.Log("=== READY FOR RESTART LOGIC ===");
+            if (showDebug) Debug.Log("=== DEATH FADE COMPLETE - WAITING FOR RESPAWN CALLBACK ===");
+            
+            // DO NOT automatically load main menu or restart scene
+            // The respawn callback should handle the actual respawn logic
         }
         
         /// <summary>

@@ -17,8 +17,8 @@ MonoBehaviour:
   description: 
   spawnPosition: {x: 401.13998, y: 1.23, z: 81.28001}
   spawnRotation: {x: -0, y: 0, z: 0}
-  sceneName: MainMenu
+  sceneName: Level-1
   saveAudioData: {fileID: 0}
   areaName: 
-  lastSavePlayTime: 0
-  lastSaveDateTime: 
+  lastSavePlayTime: 647.8789
+  lastSaveDateTime: 2025-07-05 02:06:09

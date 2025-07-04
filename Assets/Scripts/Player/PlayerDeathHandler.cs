@@ -297,6 +297,9 @@ namespace DS
         {
             if (showDebug) Debug.Log("★★★ RESPAWN REQUESTED BY DEATH SCREEN EFFECT ★★★");
             
+            // CRITICAL: Prevent any main menu or scene loading during respawn!
+            if (showDebug) Debug.Log("Blocking any potential scene transitions during respawn...");
+            
             if (!autoRespawnToCheckpoint)
             {
                 if (showDebug) Debug.Log("Auto respawn disabled - waiting for manual respawn");
@@ -309,7 +312,7 @@ namespace DS
                 return;
             }
             
-            // Trigger respawn immediately
+            // Trigger respawn immediately - SHOULD ONLY MOVE PLAYER, NOT CHANGE SCENES
             respawnScheduled = true;
             TriggerRespawnToCheckpoint();
         }
@@ -366,6 +369,9 @@ namespace DS
         {
             if (showDebug) Debug.Log("★★★ TRIGGERING RESPAWN TO CHECKPOINT ★★★");
             
+            // Prevent any scene loading or main menu navigation
+            // This should ONLY respawn at checkpoint, not go to main menu!
+            
             // Try to respawn via SaveManager
             if (saveManager != null)
             {
@@ -375,15 +381,16 @@ namespace DS
                     var respawnMethod = saveManager.GetType().GetMethod("RespawnAtLastCheckpoint");
                     if (respawnMethod != null)
                     {
+                        if (showDebug) Debug.Log("★ Calling SaveManager.RespawnAtLastCheckpoint()");
                         respawnMethod.Invoke(saveManager, null);
-                        if (showDebug) Debug.Log("Respawn triggered via SaveManager");
+                        if (showDebug) Debug.Log("★ SaveManager respawn completed successfully");
                         
                         // Trigger fade out to restore gameplay
                         TriggerFadeOutAfterRespawn();
                     }
                     else
                     {
-                        if (showDebug) Debug.LogWarning("RespawnAtLastCheckpoint method not found on SaveManager");
+                        if (showDebug) Debug.LogError("RespawnAtLastCheckpoint method not found on SaveManager!");
                         FallbackRespawn();
                     }
                 }
@@ -395,7 +402,7 @@ namespace DS
             }
             else
             {
-                if (showDebug) Debug.LogWarning("No SaveManager available - using fallback respawn");
+                if (showDebug) Debug.LogError("No SaveManager available - using fallback respawn");
                 FallbackRespawn();
             }
             
@@ -501,12 +508,30 @@ namespace DS
         /// </summary>
         private void FallbackRespawn()
         {
-            if (showDebug) Debug.Log("Using fallback respawn (simple player reset)");
+            if (showDebug) Debug.LogWarning("Using fallback respawn - SaveManager not available!");
             
-            // TODO: Move player to a default spawn point if available
-            // For now, just reset player state
+            // CRITICAL: DO NOT load main menu or change scenes!
+            // This should only reset player state and position
             
-            // Trigger fade out even for fallback respawn
+            // Try to find a spawn point in the current scene
+            GameObject spawnPoint = GameObject.FindWithTag("Respawn");
+            if (spawnPoint == null)
+                spawnPoint = GameObject.Find("SpawnPoint");
+            if (spawnPoint == null)
+                spawnPoint = GameObject.Find("PlayerSpawn");
+            
+            if (spawnPoint != null)
+            {
+                if (showDebug) Debug.Log($"Found fallback spawn point: {spawnPoint.name}");
+                gameObject.transform.position = spawnPoint.transform.position;
+                gameObject.transform.rotation = spawnPoint.transform.rotation;
+            }
+            else
+            {
+                if (showDebug) Debug.LogWarning("No spawn point found for fallback respawn - keeping current position");
+            }
+            
+            // Trigger fade out to restore gameplay
             TriggerFadeOutAfterRespawn();
         }
         
@@ -627,6 +652,70 @@ namespace DS
                     if (showDebug) Debug.LogError($"Error force saving: {e.Message}");
                 }
             }
+        }
+        
+        /// <summary>
+        /// Debug method to validate current checkpoint setup
+        /// </summary>
+        [ContextMenu("Debug: Validate Checkpoint Setup")]
+        private void DebugValidateCheckpointSetup()
+        {
+            Debug.Log("=== CHECKPOINT VALIDATION DEBUG ===");
+            
+            if (saveManager == null)
+            {
+                Debug.LogError("❌ SaveManager not found! Cannot respawn without SaveManager.");
+                return;
+            }
+            
+            try
+            {
+                // Use reflection to check current checkpoint
+                var currentCheckpointField = saveManager.GetType().GetField("currentCheckpoint", 
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                
+                if (currentCheckpointField != null)
+                {
+                    var checkpoint = currentCheckpointField.GetValue(saveManager);
+                    
+                    if (checkpoint == null)
+                    {
+                        Debug.LogError("❌ No checkpoint saved! Player must pass through a CheckpointTrigger first.");
+                    }
+                    else
+                    {
+                        // Get checkpoint details
+                        var checkpointType = checkpoint.GetType();
+                        var nameField = checkpointType.GetField("checkpointName");
+                        var sceneField = checkpointType.GetField("sceneName");
+                        var positionField = checkpointType.GetField("spawnPosition");
+                        
+                        string checkpointName = nameField?.GetValue(checkpoint)?.ToString() ?? "Unknown";
+                        string sceneName = sceneField?.GetValue(checkpoint)?.ToString() ?? "Unknown";
+                        object position = positionField?.GetValue(checkpoint);
+                        
+                        Debug.Log($"✅ Checkpoint found: {checkpointName}");
+                        Debug.Log($"📍 Spawn position: {position}");
+                        Debug.Log($"🎬 Scene name: {sceneName}");
+                        Debug.Log($"🎮 Current scene: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
+                        
+                        if (sceneName != UnityEngine.SceneManagement.SceneManager.GetActiveScene().name)
+                        {
+                            Debug.LogWarning("⚠️ WARNING: Checkpoint scene name doesn't match current scene! This might cause main menu issue!");
+                        }
+                        else
+                        {
+                            Debug.Log("✅ Scene names match - respawn should work correctly");
+                        }
+                    }
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Error validating checkpoint: {e.Message}");
+            }
+            
+            Debug.Log("=== END CHECKPOINT VALIDATION ===");
         }
         
         // Debug GUI
