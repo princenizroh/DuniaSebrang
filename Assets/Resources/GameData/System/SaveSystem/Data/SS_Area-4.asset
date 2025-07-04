@@ -13,9 +13,12 @@ MonoBehaviour:
   m_Name: SS_Area-4
   m_EditorClassIdentifier: 
   id: 
-  checkpointName: 
+  checkpointName: SS Area-4
   description: 
-  spawnPosition: {x: 0, y: 0, z: 0}
-  spawnRotation: {x: 0, y: 0, z: 0}
-  sceneName: 
+  spawnPosition: {x: 299.61002, y: 1.23, z: 30.870003}
+  spawnRotation: {x: -0, y: 0, z: 0}
+  sceneName: MainMenu
   saveAudioData: {fileID: 0}
+  areaName: 
+  lastSavePlayTime: 0
+  lastSaveDateTime: 

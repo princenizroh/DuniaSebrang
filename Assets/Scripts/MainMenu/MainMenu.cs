@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using DS.UI;
 
-namespace Lilu
+namespace DS
 {
     public class MainMenu : MonoBehaviour
     {
@@ -14,6 +15,9 @@ namespace Lilu
         [SerializeField] private GameObject kotrolMenu;
         [SerializeField] private GameObject aboutUs;
         [SerializeField] private GameObject keluar;
+
+        [Header("Save System")]
+        [SerializeField] private SaveSlotManager saveSlotManager;
 
         private bool isMainMenuPanel = false;
         private bool isSettingsOpen = false;
@@ -34,6 +38,10 @@ namespace Lilu
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            
+            // Auto-find SaveSlotManager if not assigned
+            if (saveSlotManager == null)
+                saveSlotManager = FindFirstObjectByType<SaveSlotManager>();
         }
 
         private void Update()
@@ -168,6 +176,46 @@ namespace Lilu
 
             settingsMenu?.SetActive(false);
             aboutUs?.SetActive(false);
+        }
+
+        /// <summary>
+        /// Called when "Mulai Permainan" button is clicked
+        /// </summary>
+        public void OnMulaiPermainanClicked()
+        {
+            Debug.Log("★ MULAI PERMAINAN clicked!");
+            
+            // Open save slot selection in New Game mode
+            if (saveSlotManager != null)
+            {
+                Debug.Log("★ SaveSlotManager found, setting to NewGame mode");
+                saveSlotManager.SetMode(SaveSlotManager.SlotSelectionMode.NewGame);
+                saveSlotManager.RefreshSaveSlots();
+            }
+            else
+            {
+                Debug.LogError("★ SaveSlotManager NOT FOUND!");
+            }
+            
+            // Open data save game panel
+            OpenDataSaveGame();
+            Debug.Log("★ Data save game panel opened");
+        }
+        
+        /// <summary>
+        /// Called when "Lanjutkan" button is clicked
+        /// </summary>
+        public void OnLanjutkanClicked()
+        {
+            // Open save slot selection in Continue mode
+            if (saveSlotManager != null)
+            {
+                saveSlotManager.SetMode(SaveSlotManager.SlotSelectionMode.Continue);
+                saveSlotManager.RefreshSaveSlots();
+            }
+            
+            // Open data save game panel
+            OpenDataSaveGame();
         }
     }
 }

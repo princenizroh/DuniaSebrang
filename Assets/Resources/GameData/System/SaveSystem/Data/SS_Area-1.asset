@@ -15,7 +15,10 @@ MonoBehaviour:
   id: 
   checkpointName: SS Area-1
   description: 
-  spawnPosition: {x: 449.71, y: 1.23, z: 110.12}
+  spawnPosition: {x: 74.389984, y: 1.23, z: 2.5200043}
   spawnRotation: {x: -0, y: 0, z: 0}
   sceneName: Level-1
   saveAudioData: {fileID: 11400000, guid: 078274468144903448b6137da8679623, type: 2}
+  areaName: Parking
+  lastSavePlayTime: 31.1657
+  lastSaveDateTime: 2025-07-04 21:57:05

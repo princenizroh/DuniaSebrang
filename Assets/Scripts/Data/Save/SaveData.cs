@@ -13,6 +13,10 @@ namespace DS.Data.Save
         public string gameVersion = "1.0.0";
         public int saveSlot = 0;
         
+        [Header("=== PLAY TIME TRACKING ===")]
+        public float totalPlayTime = 0f; // Total play time in seconds
+        public DateTime lastCheckpointTime; // When last checkpoint was reached
+        
         [Header("=== PLAYER DATA ===")]
         public PlayerSaveData playerData;
         
@@ -36,6 +40,8 @@ namespace DS.Data.Save
             collectibles = new CollectiblesSaveData();
             settings = new GameSettingsData();
             saveTime = DateTime.Now;
+            lastCheckpointTime = DateTime.Now;
+            totalPlayTime = 0f;
         }
         
         public void UpdateSaveTime()

@@ -13,9 +13,12 @@ MonoBehaviour:
   m_Name: SS_Area-8
   m_EditorClassIdentifier: 
   id: 
-  checkpointName: 
+  checkpointName: SS Area-8
   description: 
-  spawnPosition: {x: 0, y: 0, z: 0}
-  spawnRotation: {x: 0, y: 0, z: 0}
-  sceneName: 
+  spawnPosition: {x: 450.46, y: 1.23, z: 138.126}
+  spawnRotation: {x: -0, y: 0, z: 0}
+  sceneName: MainMenu
   saveAudioData: {fileID: 0}
+  areaName: asdad
+  lastSavePlayTime: 24.12695
+  lastSaveDateTime: 2025-07-04 21:27:00

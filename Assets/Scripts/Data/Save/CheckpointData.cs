@@ -29,6 +29,17 @@ namespace DS.Data.Save
         [Tooltip("Audio yang akan diplay saat checkpoint triggered (opsional)")]
         public AudioData saveAudioData;
 
+        [Header("=== AREA INFO ===")]
+        [Tooltip("Nama area untuk display di save slot (e.g., Prison, Forest, Cave)")]
+        public string areaName;
+        
+        [Header("=== SAVE INFO ===")]
+        [Tooltip("Waktu bermain terakhir saat save di checkpoint ini (dalam detik)")]
+        public float lastSavePlayTime;
+        
+        [Tooltip("Tanggal dan waktu terakhir save di checkpoint ini")]
+        public string lastSaveDateTime;
+
 #if UNITY_EDITOR
         private void OnValidate()
         {

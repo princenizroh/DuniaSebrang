@@ -14,8 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 
   allCheckpoints:
+  - {fileID: 11400000, guid: b5755c7892779924aa1fdc2ac9365ca1, type: 2}
   - {fileID: 11400000, guid: 7554509441a635f4588900e36f8f412a, type: 2}
   - {fileID: 11400000, guid: edeb83287180681409ad8a9b218286cf, type: 2}
-  defaultStartingCheckpoint: {fileID: 11400000, guid: 7554509441a635f4588900e36f8f412a, type: 2}
+  - {fileID: 11400000, guid: cb6e5fdb59535f643ae66aa4c86a480d, type: 2}
+  - {fileID: 11400000, guid: 78c55b18a2b4e7d4c92ae3e1d6509b7e, type: 2}
+  - {fileID: 11400000, guid: 26b246bde874779419e7f3f266393bb4, type: 2}
+  - {fileID: 11400000, guid: 703bab07ee828044595dc41be0f0145f, type: 2}
+  - {fileID: 11400000, guid: 800a3d850f271d748adcbdfea59e5554, type: 2}
+  - {fileID: 11400000, guid: cc5d23ffa9569614994e40d6a7870eb4, type: 2}
+  defaultStartingCheckpoint: {fileID: 11400000, guid: b5755c7892779924aa1fdc2ac9365ca1, type: 2}
   libraryName: Main Checkpoint Library
   description: Collection of all checkpoints in the game
