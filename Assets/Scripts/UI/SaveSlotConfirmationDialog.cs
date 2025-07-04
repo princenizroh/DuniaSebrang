@@ -17,7 +17,7 @@ namespace DS.UI
         [SerializeField] private Button noButton;
         
         [Header("=== SETTINGS ===")]
-        [SerializeField] private bool showDebug = true;
+        [SerializeField] private bool showDebug = false; // Default false untuk production
         
         // Callbacks
         private Action onYesCallback;
@@ -174,17 +174,8 @@ namespace DS.UI
         /// </summary>
         public void ForceCloseDialog()
         {
-            if (showDebug) Debug.Log("★ ForceCloseDialog: Closing dialog and deactivating panel");
-            
+            if (showDebug) Debug.Log("★ ForceCloseDialog called");
             HideDialog();
-            
-            // Deactivate the parent panel if needed
-            var parentPanel = GetComponentInParent<Canvas>();
-            if (parentPanel != null && parentPanel.gameObject != dialogPanel)
-            {
-                // Don't deactivate the main canvas, but log for reference
-                if (showDebug) Debug.Log("★ Parent canvas found, dialog closed");
-            }
         }
         
         private void OnYesClicked()
@@ -196,7 +187,7 @@ namespace DS.UI
         
         private void OnNoClicked()
         {
-            if (showDebug) Debug.Log("★ Dialog: No/Cancel clicked - User cancelled operation");
+            if (showDebug) Debug.Log("★ Dialog: No/Cancel clicked");
             onNoCallback?.Invoke();
             HideDialog();
         }

@@ -10,7 +10,6 @@ namespace DS.UI
     {
         [Header("=== DEBUG CONTROLS ===")]
         [SerializeField] private KeyCode debugKey = KeyCode.F12;
-        [SerializeField] private SaveManager saveManager;
         
         private void Update()
         {
@@ -25,9 +24,8 @@ namespace DS.UI
         {
             Debug.Log("=== SAVE FILE DEBUGGER ===");
             
-            // Check SaveManager
-            if (saveManager == null)
-                saveManager = FindObjectOfType<SaveManager>();
+            // Auto-find SaveManager
+            var saveManager = FindObjectOfType<SaveManager>();
             
             bool saveManagerFound = saveManager != null;
             Debug.Log($"✓ SaveManager Found: {saveManagerFound}");

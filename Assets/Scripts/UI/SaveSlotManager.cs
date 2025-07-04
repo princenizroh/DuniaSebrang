@@ -37,25 +37,16 @@ namespace DS.UI
         [Tooltip("Confirmation dialog for slot conflicts (full UI)")]
         [SerializeField] private SaveSlotConfirmationDialog confirmationDialog;
         
-        [Tooltip("Simple confirmation dialog (fallback using Unity dialogs)")]
-        // [SerializeField] private SimpleConfirmationDialog simpleDialog;
-        
         [Header("=== NEW GAME SETTINGS ===")]
         [SerializeField] private string newGameScene = "GameScene";
         
         [Header("=== DEBUG ===")]
         [Tooltip("Show debug messages")]
-        [SerializeField] private bool showDebug = true;
+        [SerializeField] private bool showDebug = false; // Default false untuk production
         
         [Header("=== QUICK FIX CONTROLS ===")]
         [Tooltip("Key to force refresh all slots")]
         [SerializeField] private KeyCode forceRefreshKey = KeyCode.F5;
-        
-        [Tooltip("Key to debug save files")]
-        [SerializeField] private KeyCode debugSaveFilesKey = KeyCode.F12;
-        
-        [Tooltip("Key to clear corrupted save data")]
-        [SerializeField] private KeyCode clearCorruptedDataKey = KeyCode.F9;
         
         // Events
         public event System.Action<int> OnNewGameSlotSelected;
@@ -831,33 +822,6 @@ namespace DS.UI
         }
         
         /// <summary>
-        /// Debug method to check UI component states
-        /// </summary>
-        [ContextMenu("Debug UI Component States")]
-        public void DebugUIComponentStates()
-        {
-            Debug.Log("★★★ UI COMPONENT DEBUG ★★★");
-            
-            for (int i = 0; i < saveSlots.Length; i++)
-            {
-                if (saveSlots[i] != null)
-                {
-                    var textComponent = saveSlots[i].GetComponentInChildren<TextMeshProUGUI>();
-                    Debug.Log($"★ Slot {i}:");
-                    Debug.Log($"  - SaveSlotUI exists: {saveSlots[i] != null}");
-                    Debug.Log($"  - TextComponent exists: {textComponent != null}");
-                    Debug.Log($"  - Current text: '{textComponent?.text}'");
-                    Debug.Log($"  - GameObject active: {saveSlots[i].gameObject.activeInHierarchy}");
-                    Debug.Log($"  - IsEmpty property: {saveSlots[i].IsEmpty}");
-                }
-                else
-                {
-                    Debug.LogError($"★ Slot {i} is NULL!");
-                }
-            }
-        }
-        
-        /// <summary>
         /// Set save slot in SaveManager with verification
         /// </summary>
         private bool SetSaveSlotInManager(int slotIndex)
@@ -924,31 +888,6 @@ namespace DS.UI
             {
                 Debug.LogError($"★ Error setting save slot: {e.Message}");
                 return false;
-            }
-        }
-        
-        /// <summary>
-        /// Debug method to show current SaveManager state
-        /// </summary>
-        private void DebugSaveManagerState()
-        {
-            if (saveManager == null) return;
-            
-            try
-            {
-                // Get current slot
-                var slotField = saveManager.GetType().GetField("currentSaveSlot", 
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                
-                if (slotField != null)
-                {
-                    int currentSlot = (int)slotField.GetValue(saveManager);
-                    Debug.Log($"★ SaveManager currentSaveSlot: {currentSlot}");
-                }
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"★ Error debugging SaveManager state: {e.Message}");
             }
         }
         
@@ -1038,18 +977,6 @@ namespace DS.UI
             {
                 Debug.Log("★ F5 pressed - Force refreshing all slots!");
                 ForceRefreshNow();
-            }
-            
-            if (Input.GetKeyDown(debugSaveFilesKey))
-            {
-                Debug.Log("★ F12 pressed - Debugging save files!");
-                DebugSaveFiles();
-            }
-            
-            if (Input.GetKeyDown(clearCorruptedDataKey))
-            {
-                Debug.Log("★ F9 pressed - Clearing corrupted save data!");
-                ClearCorruptedSaveData();
             }
         }
         

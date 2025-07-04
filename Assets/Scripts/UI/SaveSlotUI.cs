@@ -34,7 +34,7 @@ namespace DS.UI
 
         [Header("=== DEBUG ===")]
         [Tooltip("Show debug messages")]
-        [SerializeField] private bool showDebug = true;
+        [SerializeField] private bool showDebug = false; // Default false untuk production
         
         // Events
         public event System.Action<int> OnSlotClicked;
@@ -112,21 +112,18 @@ namespace DS.UI
         /// </summary>
         public void SetSaveSlotInfo(SaveSlotInfo slotInfo)
         {
-            Debug.Log($"★ SaveSlotUI[{slotIndex}].SetSaveSlotInfo called:");
-            Debug.Log($"  isEmpty: {slotInfo.isEmpty}");
-            Debug.Log($"  areaName: '{slotInfo.areaName}'");
-            Debug.Log($"  playTime: {slotInfo.playTime}");
-            Debug.Log($"  lastSavePlayTime: {slotInfo.lastSavePlayTime}");
-            Debug.Log($"  lastSaveDateTime: '{slotInfo.lastSaveDateTime}'");
+            if (showDebug) 
+            {
+                Debug.Log($"★ SaveSlotUI[{slotIndex}].SetSaveSlotInfo called:");
+                Debug.Log($"  isEmpty: {slotInfo.isEmpty}, areaName: '{slotInfo.areaName}'");
+            }
             
             if (slotInfo.isEmpty)
             {
-                Debug.Log($"★ Slot {slotIndex} is empty - calling SetAsEmptySlot()");
                 SetAsEmptySlot();
                 return;
             }
 
-            Debug.Log($"★ Slot {slotIndex} has data - setting up UI");
             IsEmpty = false;
             // Note: SlotSaveData might be null when using SaveSlotInfo, but that's okay
 
@@ -137,41 +134,15 @@ namespace DS.UI
 
             string finalText = $"{slotInfo.areaName}\n{playTimeString}{lastSaveDateString}";
             
-            Debug.Log($"★ Slot {slotIndex} final text: '{finalText}'");
-            Debug.Log($"★ Slot {slotIndex} slotInfoText is null: {slotInfoText == null}");
-            
             if (slotInfoText != null)
             {
-                // FORCE MULTIPLE REFRESH ATTEMPTS
                 slotInfoText.text = finalText;
-                Debug.Log($"★ Slot {slotIndex} text set to: '{finalText}'");
                 
-                // Method 1: Force mesh update
+                // Force UI refresh
                 slotInfoText.SetAllDirty();
                 slotInfoText.ForceMeshUpdate();
                 
-                // Method 2: Disable/Enable component
-                slotInfoText.enabled = false;
-                slotInfoText.enabled = true;
-                
-                // Method 3: Disable/Enable GameObject
-                GameObject textGO = slotInfoText.gameObject;
-                textGO.SetActive(false);
-                textGO.SetActive(true);
-                
-                // Method 4: Force Canvas update
-                Canvas parentCanvas = slotInfoText.GetComponentInParent<Canvas>();
-                if (parentCanvas != null)
-                {
-                    parentCanvas.enabled = false;
-                    parentCanvas.enabled = true;
-                }
-                
-                // Method 5: Set text again after all refreshes
-                slotInfoText.text = finalText;
-                
-                Debug.Log($"★ Slot {slotIndex} FORCED text refresh complete");
-                Debug.Log($"★ Final text verification: '{slotInfoText.text}'");
+                if (showDebug) Debug.Log($"★ Slot {slotIndex} text updated: '{finalText}'");
             }
             else
             {
@@ -180,11 +151,7 @@ namespace DS.UI
 
             if (showDebug) 
             {
-                Debug.Log($"Save slot {slotIndex} updated with enhanced info:");
-                Debug.Log($"  Area: {slotInfo.areaName}");
-                Debug.Log($"  Play Time: {playTimeString} (from {(slotInfo.lastSavePlayTime > 0 ? "CheckpointData" : "SaveData")})");
-                Debug.Log($"  Last Save: {slotInfo.lastSaveDateTime}");
-                Debug.Log($"  Final IsEmpty: {IsEmpty}");
+                Debug.Log($"Save slot {slotIndex} updated: {slotInfo.areaName}, playtime: {playTimeString}");
             }
         }
         
