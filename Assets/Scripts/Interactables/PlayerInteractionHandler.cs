@@ -21,6 +21,9 @@ namespace DS
         [SerializeField] private bool disableInputOnInteraction = true;
         private Rigidbody playerRigidbody;
         
+        // Animation override system
+        private bool forceAnimationOverride = false;
+        
         [Header("Holdable Object")]
         [SerializeField] private Transform handTransform; // Assign the hand bone/transform
         
@@ -73,7 +76,34 @@ namespace DS
             {
                 CheckMovement();
             }
+            else
+            {
+                // If we're in an extractable interaction, still check for movement to cancel
+                if (currentInteractionObject != null && 
+                    currentInteractionObject.interactionType == InteractionType.ExtractableObject)
+                {
+                    CheckMovement();
+                }
+            }
+            
             HandleInteractionInput();
+            
+            // Handle animation override system
+            HandleAnimationOverride();
+        }
+        
+        private void HandleAnimationOverride()
+        {
+            // Force animation updates when movement is detected during interaction
+            if (forceAnimationOverride && playerAnimator != null)
+            {
+                // If player is moving but animation is stuck, force transition
+                if (isMoving && !isInteracting)
+                {
+                    playerAnimator.Play(idleAnimationName);
+                    forceAnimationOverride = false;
+                }
+            }
         }
         
         private void CheckMovement()
@@ -89,6 +119,7 @@ namespace DS
                 currentInteractionObject != null && 
                 currentInteractionObject.interactionType == InteractionType.ExtractableObject)
             {
+                Debug.Log("Movement detected during extraction. Cancelling interaction...");
                 CancelCurrentInteraction();
             }
         }
@@ -115,8 +146,10 @@ namespace DS
         
         private void StartInteraction()
         {
-            if (currentInteractionObject != null && currentInteractionObject.CanInteract)
+            if (currentInteractionObject != null && currentInteractionObject.CanInteract && !isInteracting)
             {
+                Debug.Log($"Starting interaction with {currentInteractionObject.objectName}");
+                
                 isInteracting = true;
                 
                 // Disable player controls based on interaction type
@@ -124,9 +157,14 @@ namespace DS
                 {
                     DisablePlayerControls();
                 }
+                // For ExtractableObject, don't disable controls to allow cancellation by movement
                 
                 currentInteractionObject.StartInteraction(this);
                 UpdateInteractionPrompt();
+            }
+            else
+            {
+                Debug.Log($"Cannot start interaction - Object: {currentInteractionObject?.objectName}, isInteracting: {isInteracting}, CanInteract: {currentInteractionObject?.CanInteract}");
             }
         }
         
@@ -134,28 +172,68 @@ namespace DS
         {
             if (currentInteractionObject != null && isInteracting)
             {
+                Debug.Log($"Movement detected - cancelling interaction with {currentInteractionObject.objectName}");
+                
+                // Force animation override before cancelling
+                forceAnimationOverride = true;
+                
+                // Cancel the interaction object first
                 currentInteractionObject.CancelInteraction(this);
+                
+                // Set our state
                 isInteracting = false;
                 
                 // Re-enable player controls
                 EnablePlayerControls();
                 
+                // Update UI
                 UpdateInteractionPrompt();
+                
+                // Force immediate animation transition
+                StartCoroutine(ForceAnimationTransition());
             }
+        }
+        
+        private IEnumerator ForceAnimationTransition()
+        {
+            // Wait a tiny bit for the cancel to process
+            yield return new WaitForSeconds(0.1f);
+            
+            // Force reverse reaching animation
+            PlayReverseReachingAnimation();
+            
+            // Wait for reverse reaching to complete
+            yield return new WaitForSeconds(2f);
+            
+            // Force idle animation
+            PlayIdleAnimation();
+            
+            // Reset override flag
+            forceAnimationOverride = false;
         }
         
         public void OnInteractionComplete()
         {
+            Debug.Log("Interaction completed");
+            
             // Called when interaction is finished
             isInteracting = false;
             EnablePlayerControls();
             UpdateInteractionPrompt();
+            
+            // Clear held object reference (but don't destroy - let the interaction object handle that)
+            if (currentHeldObject != null)
+            {
+                Debug.Log($"Clearing held object reference: {currentHeldObject.name}");
+                currentHeldObject = null;
+            }
         }
         
         public void PlayReachingAnimation()
         {
             if (playerAnimator != null)
             {
+                forceAnimationOverride = false; // Reset override flag
                 playerAnimator.Play(reachingAnimationName);
             }
         }
@@ -164,6 +242,7 @@ namespace DS
         {
             if (playerAnimator != null)
             {
+                forceAnimationOverride = true; // Set override flag
                 playerAnimator.Play(reverseReachingAnimationName);
             }
         }
@@ -172,6 +251,7 @@ namespace DS
         {
             if (playerAnimator != null)
             {
+                forceAnimationOverride = true; // Set override flag
                 playerAnimator.Play(idleAnimationName);
             }
         }
@@ -200,6 +280,9 @@ namespace DS
         {
             if (obj != null && handTransform != null)
             {
+                // Clear any existing held object first
+                ClearHeldObject();
+                
                 // Store as current held object
                 currentHeldObject = obj;
                 
@@ -214,6 +297,17 @@ namespace DS
                 {
                     objCollider.enabled = false;
                 }
+                
+                Debug.Log($"Moved {obj.name} to hand");
+            }
+        }
+        
+        public void ClearHeldObject()
+        {
+            if (currentHeldObject != null)
+            {
+                Debug.Log($"Clearing held object: {currentHeldObject.name}");
+                currentHeldObject = null;
             }
         }
         
@@ -221,6 +315,7 @@ namespace DS
         {
             if (currentHeldObject != null)
             {
+                Debug.Log($"Destroying held object: {currentHeldObject.name}");
                 Destroy(currentHeldObject);
                 currentHeldObject = null;
             }
@@ -340,6 +435,7 @@ namespace DS
                 "CharacterController",
                 "PlayerCameraController"
             };
+            
             foreach (string scriptName in scriptsToDisable)
             {
                 // Cari di self, parent, dan root
