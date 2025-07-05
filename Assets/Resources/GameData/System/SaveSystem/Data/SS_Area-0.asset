@@ -20,5 +20,10 @@ MonoBehaviour:
   sceneName: Level-1
   saveAudioData: {fileID: 0}
   areaName: FSAF
+<<<<<<< HEAD
   lastSavePlayTime: 21.11469
   lastSaveDateTime: 2025-07-05 15.49.14
+=======
+  lastSavePlayTime: 500.4021
+  lastSaveDateTime: 2025-07-05 19:45:12
+>>>>>>> prince

@@ -1,0 +1,398 @@
+using UnityEngine;
+using DS.Data.Dialog;
+using System.Collections;
+
+namespace DS
+{
+    public enum InteractionType
+    {
+        SimpleInteraction,
+        ExtractableObject
+    }
+
+    public class InteractionObject : MonoBehaviour
+    {
+        [Header("Interaction Settings")]
+        public InteractionType interactionType = InteractionType.SimpleInteraction;
+        public string objectName = "Object";
+        public DialogData dialogData;
+        
+        [Header("Extractable Object Settings")]
+        [SerializeField] private int extractionCount = 6;
+        [SerializeField] private float extractionDelay = 0.3f; // Reduced delay for more responsive extraction
+        
+        [Header("Holdable Object Settings")]
+        [SerializeField] private bool isHoldable = true;
+        [SerializeField] private bool moveToHand = true; // Move this object to hand instead of creating clone
+        [SerializeField] private float postDialogDelay = 2f; // Delay after dialog finishes
+        
+        private int currentExtractionCount = 0;
+        private bool isBeingInteracted = false;
+        private bool hasBeenInteracted = false;
+        private bool isCancelling = false; // Flag to prevent new interactions during cancellation
+        private bool isProcessingInteraction = false; // Flag to prevent rapid re-interaction
+        
+        // Store original transform data for cancellation
+        private Transform originalParent;
+        private Vector3 originalPosition;
+        private Quaternion originalRotation;
+        private bool originalTransformStored = false;
+        
+        // Coroutine references for cleanup
+        private Coroutine currentInteractionCoroutine;
+        
+        public bool CanInteract => !isBeingInteracted && 
+                                  !isCancelling && 
+                                  !isProcessingInteraction &&
+                                  (!hasBeenInteracted || interactionType == InteractionType.ExtractableObject) &&
+                                  gameObject != null; // Make sure object still exists
+        
+        public void StartInteraction(PlayerInteractionHandler player)
+        {
+            if (!CanInteract) 
+            {
+                Debug.LogWarning($"Cannot start interaction with {objectName} - CanInteract: {CanInteract}, isBeingInteracted: {isBeingInteracted}, isCancelling: {isCancelling}, isProcessingInteraction: {isProcessingInteraction}");
+                return;
+            }
+            
+            // Set all interaction flags
+            isBeingInteracted = true;
+            isProcessingInteraction = true;
+            isCancelling = false;
+            
+            // Stop any existing coroutines
+            if (currentInteractionCoroutine != null)
+            {
+                StopCoroutine(currentInteractionCoroutine);
+            }
+            
+            switch (interactionType)
+            {
+                case InteractionType.SimpleInteraction:
+                    currentInteractionCoroutine = StartCoroutine(HandleSimpleInteraction(player));
+                    break;
+                case InteractionType.ExtractableObject:
+                    currentInteractionCoroutine = StartCoroutine(HandleExtractableInteraction(player));
+                    break;
+            }
+        }
+        
+        private IEnumerator HandleSimpleInteraction(PlayerInteractionHandler player)
+        {
+            try
+            {
+                // Play reaching animation
+                player.PlayReachingAnimation();
+                
+                // Wait for reaching animation to start
+                yield return new WaitForSeconds(0.5f);
+                
+                // Check if cancelled during wait
+                if (isCancelling) yield break;
+                
+                // Move object to hand if available
+                Transform originalParent = null;
+                Vector3 originalPosition = Vector3.zero;
+                Quaternion originalRotation = Quaternion.identity;
+                
+                if (isHoldable && moveToHand)
+                {
+                    // Store original transform data
+                    originalParent = transform.parent;
+                    originalPosition = transform.position;
+                    originalRotation = transform.rotation;
+                    
+                    // Move to hand
+                    player.MoveObjectToHand(gameObject);
+                }
+                
+                // Check if cancelled after moving to hand
+                if (isCancelling) yield break;
+                
+                // Play all dialog lines if available
+                if (dialogData != null && dialogData.dialogLines.Count > 0)
+                {
+                    yield return StartCoroutine(PlayAllDialogLines());
+                }
+                
+                // Check if cancelled during dialog
+                if (isCancelling) yield break;
+                
+                // Post-dialog delay
+                yield return new WaitForSeconds(postDialogDelay);
+                
+                // Check if cancelled during delay
+                if (isCancelling) yield break;
+                
+                // Play reverse reaching animation
+                player.PlayReverseReachingAnimation();
+                
+                // Wait for reverse reaching animation to complete
+                yield return new WaitForSeconds(2f); // Give more time for reverse reaching
+                
+                // Check if cancelled during animation
+                if (isCancelling) yield break;
+                
+                // Return object to original position or destroy it
+                if (isHoldable && moveToHand)
+                {
+                    // Option 1: Return to original position
+                    // transform.SetParent(originalParent);
+                    // transform.position = originalPosition;
+                    // transform.rotation = originalRotation;
+                    
+                    // Option 2: Destroy the object after interaction
+                    Destroy(gameObject);
+                }
+                
+                // Play idle animation
+                player.PlayIdleAnimation();
+                
+                hasBeenInteracted = true;
+                
+                // Notify player that interaction is complete
+                player.OnInteractionComplete();
+            }
+            finally
+            {
+                // Always cleanup state
+                CleanupInteractionState();
+            }
+        }
+        
+        private IEnumerator HandleExtractableInteraction(PlayerInteractionHandler player)
+        {
+            try
+            {
+                // Play reaching animation and hold it
+                player.PlayReachingAnimation();
+                
+                // Wait for reaching animation to start
+                yield return new WaitForSeconds(0.5f);
+                
+                // Check if cancelled during wait
+                if (isCancelling) yield break;
+                
+                // Store original transform data for potential cancellation
+                if (isHoldable && moveToHand)
+                {
+                    originalParent = transform.parent;
+                    originalPosition = transform.position;
+                    originalRotation = transform.rotation;
+                    originalTransformStored = true;
+                    
+                    // Move to hand
+                    player.MoveObjectToHand(gameObject);
+                }
+                
+                // Check if cancelled after moving to hand
+                if (isCancelling) yield break;
+                
+                // Play all dialog lines if available (tidak menunggu dialog selesai)
+                if (dialogData != null && dialogData.dialogLines.Count > 0 && currentExtractionCount == 0)
+                {
+                    StartCoroutine(PlayAllDialogLines()); // Tidak menunggu dengan yield
+                }
+                
+                // Check if cancelled before starting extraction
+                if (isCancelling) yield break;
+                
+                // Langsung mulai extraction process tanpa post-dialog delay
+                Debug.Log($"Starting extraction process for {objectName}. Press E repeatedly to extract!");
+                
+                // Wait for extraction process - check both conditions properly
+                while (currentExtractionCount < extractionCount && isBeingInteracted && !isCancelling)
+                {
+                    yield return new WaitForSeconds(extractionDelay);
+                    
+                    // Additional safety check - if object is destroyed or player moved away
+                    if (gameObject == null || !isBeingInteracted || isCancelling)
+                    {
+                        break;
+                    }
+                }
+                
+                // Check if cancelled during extraction
+                if (isCancelling) yield break;
+                
+                // Only handle completion if still being interacted and not cancelled
+                if (isBeingInteracted && !isCancelling && currentExtractionCount >= extractionCount && gameObject != null)
+                {
+                    // Object extracted successfully
+                    Debug.Log($"{objectName} extraction complete!");
+                    
+                    // Clear player's held object before destroying
+                    player.ClearHeldObject();
+                    
+                    // Play reverse reaching animation
+                    player.PlayReverseReachingAnimation();
+                    
+                    // Wait for reverse reaching animation to complete
+                    yield return new WaitForSeconds(2f);
+                    
+                    // Check if cancelled during animation
+                    if (isCancelling) yield break;
+                    
+                    // Play idle animation
+                    player.PlayIdleAnimation();
+                    
+                    // Destroy the object after successful extraction
+                    if (isHoldable && moveToHand)
+                    {
+                        Destroy(gameObject);
+                    }
+                    
+                    // Object is now extracted
+                    hasBeenInteracted = true;
+                    
+                    // Notify player that interaction is complete
+                    player.OnInteractionComplete();
+                }
+                else
+                {
+                    Debug.Log($"Extraction process ended - Cancelled: {isCancelling}, InteractionState: {isBeingInteracted}, Count: {currentExtractionCount}/{extractionCount}");
+                }
+            }
+            finally
+            {
+                // Always cleanup state
+                CleanupInteractionState();
+            }
+        }
+        
+        private IEnumerator PlayAllDialogLines()
+        {
+            if (dialogData == null || dialogData.dialogLines.Count == 0) yield break;
+            
+            for (int i = 0; i < dialogData.dialogLines.Count; i++)
+            {
+                DS.DialogManager.Instance?.PlaySpecificLine(dialogData, i);
+                yield return new WaitForSeconds(dialogData.dialogLines[i].duration);
+            }
+        }
+        
+        public void ProcessExtraction()
+        {
+            if (interactionType == InteractionType.ExtractableObject && isBeingInteracted && !isCancelling)
+            {
+                currentExtractionCount++;
+                Debug.Log($"Extraction progress: {currentExtractionCount}/{extractionCount}");
+                
+                // Visual feedback untuk extraction progress
+                if (currentExtractionCount < extractionCount)
+                {
+                    Debug.Log($"Keep pressing E! {extractionCount - currentExtractionCount} more times needed.");
+                }
+                else
+                {
+                    Debug.Log($"{objectName} extraction complete!");
+                }
+            }
+        }
+        
+        public void CancelInteraction(PlayerInteractionHandler player)
+        {
+            if (isBeingInteracted && !isCancelling)
+            {
+                Debug.Log($"Cancelling interaction with {objectName}. Progress lost!");
+                
+                // Set cancellation flag immediately
+                isCancelling = true;
+                
+                // Stop any running coroutines
+                if (currentInteractionCoroutine != null)
+                {
+                    StopCoroutine(currentInteractionCoroutine);
+                    currentInteractionCoroutine = null;
+                }
+                
+                // Reset extraction progress completely
+                currentExtractionCount = 0;
+                
+                // Return object to original position if it was moved to hand
+                if (isHoldable && moveToHand && originalTransformStored)
+                {
+                    // Re-enable collider if it was disabled
+                    Collider objCollider = GetComponent<Collider>();
+                    if (objCollider != null)
+                    {
+                        objCollider.enabled = true;
+                    }
+                    
+                    // Return to original position
+                    transform.SetParent(originalParent);
+                    transform.position = originalPosition;
+                    transform.rotation = originalRotation;
+                    
+                    // Clear stored transform data
+                    originalTransformStored = false;
+                    originalParent = null;
+                }
+                
+                // Clear player's held object reference
+                player.ClearHeldObject();
+                
+                // Immediately play reverse reaching animation
+                player.PlayReverseReachingAnimation();
+                
+                // Start coroutine to handle animation transition
+                StartCoroutine(HandleCancellationAnimation(player));
+            }
+        }
+        
+        private IEnumerator HandleCancellationAnimation(PlayerInteractionHandler player)
+        {
+            try
+            {
+                // Wait for reverse reaching animation to complete
+                yield return new WaitForSeconds(2f);
+                
+                // Play idle animation
+                player.PlayIdleAnimation();
+                
+                // Notify player that interaction is complete (cancelled)
+                player.OnInteractionComplete();
+            }
+            finally
+            {
+                // Always cleanup state after cancellation
+                CleanupInteractionState();
+            }
+        }
+        
+        private void CleanupInteractionState()
+        {
+            // Reset all flags
+            isBeingInteracted = false;
+            isCancelling = false;
+            
+            // Clear coroutine reference
+            currentInteractionCoroutine = null;
+            
+            // Add a small delay before allowing new interactions to prevent rapid re-interaction
+            StartCoroutine(ResetProcessingFlag());
+        }
+        
+        private IEnumerator ResetProcessingFlag()
+        {
+            // Wait a bit to prevent rapid re-interaction
+            yield return new WaitForSeconds(0.5f);
+            isProcessingInteraction = false;
+        }
+        
+        private IEnumerator PlayIdleAfterCancellation(PlayerInteractionHandler player, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            player.PlayIdleAnimation();
+            
+            // Notify player that interaction is complete (cancelled)
+            player.OnInteractionComplete();
+        }
+        
+        private IEnumerator PlayIdleAfterDelay(PlayerInteractionHandler player, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            player.PlayIdleAnimation();
+        }
+    }
+}
