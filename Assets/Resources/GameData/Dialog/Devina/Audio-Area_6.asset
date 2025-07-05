@@ -16,100 +16,90 @@ MonoBehaviour:
   dialogLines:
   - id: 0
     speakerName: Devina
-    text: Akhirnya keluar dari aula itu!
+    text: Ada sosok wanita lagi... hantu lagi kah? Atau Rara?
     voiceClip: {fileID: 0}
     duration: 3
   - id: 1
     speakerName: Devina
-    text: Tapi ini ruangan apa ya?
+    text: Menghilang lagi...
     voiceClip: {fileID: 0}
     duration: 3
   - id: 2
     speakerName: Devina
-    text: Ada sosok wanita lagi... hantu lagi kah? Atau Rara?
+    text: Jangan-jangan Rara sudah mati
     voiceClip: {fileID: 0}
     duration: 3
   - id: 3
     speakerName: Devina
-    text: Menghilang lagi...
+    text: Nggak, nggak, nggak... aku percaya Rara masih hidup
     voiceClip: {fileID: 0}
     duration: 3
   - id: 4
     speakerName: Devina
-    text: Jangan-jangan Rara sudah mati
+    text: Astaga! Ada hantu lagi di kursi itu!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 5
     speakerName: Devina
-    text: Nggak, nggak, nggak... aku percaya Rara masih hidup
+    text: Kenapa tempat ini penuh hantu semua...
     voiceClip: {fileID: 0}
     duration: 3
   - id: 6
     speakerName: Devina
-    text: Astaga! Ada hantu lagi di kursi itu!
+    text: Aku harus keluar dari sini sekarang!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 7
     speakerName: Devina
-    text: Kenapa tempat ini penuh hantu semua...
+    text: Semoga pintu itu jalan keluarnya
     voiceClip: {fileID: 0}
     duration: 3
   - id: 8
     speakerName: Devina
-    text: Aku harus keluar dari sini sekarang!
+    text: Tidak! Dia di depan pintu!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 9
     speakerName: Devina
-    text: Semoga pintu itu jalan keluarnya
+    text: Aku terjebak lagi... kenapa selalu begini?
     voiceClip: {fileID: 0}
     duration: 3
   - id: 10
     speakerName: Devina
-    text: Tidak! Dia di depan pintu!
+    text: Aku udah capek banget dikejar terus!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 11
     speakerName: Devina
-    text: Aku terjebak lagi... kenapa selalu begini?
+    text: Tunggu... ada apa di punggungnya?
     voiceClip: {fileID: 0}
     duration: 3
   - id: 12
     speakerName: Devina
-    text: Aku udah capek banget dikejar terus!
+    text: Sepertinya ada sesuatu yang tertancap... apakah pasak yang tadi?
     voiceClip: {fileID: 0}
     duration: 3
   - id: 13
     speakerName: Devina
-    text: Tunggu... ada apa di punggungnya?
+    text: Berhasil! Aku berhasil mencabutnya!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 14
     speakerName: Devina
-    text: Sepertinya ada sesuatu yang tertancap... apakah pasak yang tadi?
+    text: Akhirnya hantu ini mati. Batrenya habis kali
     voiceClip: {fileID: 0}
     duration: 3
   - id: 15
     speakerName: Devina
-    text: Berhasil! Aku berhasil mencabutnya!
+    text: Akhirnya... selesai juga kejar-kejarannya
     voiceClip: {fileID: 0}
     duration: 3
   - id: 16
     speakerName: Devina
-    text: Akhirnya hantu ini mati. Batrenya habis kali
-    voiceClip: {fileID: 0}
-    duration: 3
-  - id: 17
-    speakerName: Devina
-    text: Akhirnya... selesai juga kejar-kejarannya
-    voiceClip: {fileID: 0}
-    duration: 3
-  - id: 18
-    speakerName: Devina
     text: Aku lega banget... tapi masih harus cari Rara
     voiceClip: {fileID: 0}
     duration: 3
-  - id: 19
+  - id: 17
     speakerName: Devina
     text: Sampai mana gedung ini berakhir ya...
     voiceClip: {fileID: 0}

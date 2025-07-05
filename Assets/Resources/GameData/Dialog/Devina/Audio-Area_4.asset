@@ -26,22 +26,22 @@ MonoBehaviour:
     duration: 3
   - id: 2
     speakerName: Devina
-    text: Aku nggak bisa keluar... seperti ada yang menghalangi
+    text: AAAHHH! APA ITU?!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 3
     speakerName: Devina
-    text: AAAHHH! APA ITU?!
+    text: Hantu! Ada hantu di depanku!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 4
     speakerName: Devina
-    text: Hantu! Ada hantu di depanku!
+    text: Aku harus kabur! Kabur sekarang!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 5
     speakerName: Devina
-    text: Aku harus kabur! Kabur sekarang!
+    text: Aku tidak bisa keluar
     voiceClip: {fileID: 0}
     duration: 3
   - id: 6

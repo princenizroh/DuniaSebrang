@@ -46,15 +46,20 @@ MonoBehaviour:
     duration: 3
   - id: 6
     speakerName: Devina
-    text: Jadi teringat saat aku main sama Rara
+    text: Bangku ini kayaknya udah lama nggak dipakai
     voiceClip: {fileID: 0}
     duration: 3
   - id: 7
     speakerName: Devina
-    text: Astaga! Itu apa? Tangan?!
+    text: Jadi teringat saat aku main sama Rara
     voiceClip: {fileID: 0}
     duration: 3
   - id: 8
+    speakerName: Devina
+    text: Astaga! Itu apa? Tangan?!
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 9
     speakerName: Devina
     text: Kenapa ada tangan keluar dari tanah...
     voiceClip: {fileID: 0}

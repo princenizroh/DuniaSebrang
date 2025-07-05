@@ -16,155 +16,150 @@ MonoBehaviour:
   dialogLines:
   - id: 0
     speakerName: Devina
-    text: Tempat ini luas juga
+    text: Ruangan ini... berbeda dari yang lain
     voiceClip: {fileID: 0}
     duration: 3
   - id: 1
     speakerName: Devina
-    text: Ruangan ini... berbeda dari yang lain
+    text: Hawanya sangat berat dan gelap
     voiceClip: {fileID: 0}
     duration: 3
   - id: 2
     speakerName: Devina
-    text: Hawanya sangat berat dan gelap
+    text: RARA! Itu Rara! Dia di sana!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 3
     speakerName: Devina
-    text: RARA! Itu Rara! Dia di sana!
+    text: Rara! Aku di sini! Bangun!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 4
     speakerName: Devina
-    text: Rara! Aku di sini! Bangun!
+    text: Kenapa dia nggak bangun? Rara!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 5
     speakerName: Devina
-    text: Kenapa dia nggak bangun? Rara!
+    text: AAAAAHHH! MONSTER APA ITU?!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 6
     speakerName: Devina
-    text: AAAAAHHH! MONSTER APA ITU?!
+    text: Besar banget! Dan mengerikan!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 7
     speakerName: Devina
-    text: Besar banget! Dan mengerikan!
+    text: Tidak ada jalan keluar. Aku harus mengalahkannya
     voiceClip: {fileID: 0}
     duration: 3
   - id: 8
     speakerName: Devina
-    text: Tidak ada jalan keluar. Aku harus mengalahkannya
+    text: Waaah, dia bisa menyeruduk. Menyeramkan sekali
     voiceClip: {fileID: 0}
     duration: 3
   - id: 9
     speakerName: Devina
-    text: Waaah, dia bisa menyeruduk. Menyeramkan sekali
+    text: Aku harus cari cara mengalahkannya!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 10
     speakerName: Devina
-    text: Aku harus cari cara mengalahkannya!
+    text: Harusnya ada sesuatu... seperti di tempat sebelumnya
     voiceClip: {fileID: 0}
     duration: 3
   - id: 11
     speakerName: Devina
-    text: Harus ada sesuatu... seperti di tempat sebelumnya
+    text: Pasak! Pasti ada pasak di sini juga!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 12
     speakerName: Devina
-    text: Pasak! Pasti ada pasak di sini juga!
+    text: Ketemu! Ada pasak di sini!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 13
     speakerName: Devina
-    text: Ketemu! Ada pasak di sini!
+    text: Semoga ini cara mengalahkannya
     voiceClip: {fileID: 0}
     duration: 3
   - id: 14
     speakerName: Devina
-    text: Semoga ini cara mengalahkannya
+    text: Keras banget... tapi harus bisa!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 15
     speakerName: Devina
-    text: Keras banget... tapi harus bisa!
+    text: Masih ada lagi! Di sudut sana!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 16
     speakerName: Devina
-    text: Masih ada lagi! Di sudut sana!
+    text: Cepat Devina! Sebelum terlambat!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 17
     speakerName: Devina
-    text: Cepat Devina! Sebelum terlambat!
+    text: Yang terakhir! Kumohon berhasil!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 18
     speakerName: Devina
-    text: Yang terakhir! Kumohon berhasil!
+    text: Berhasil! Aku berhasil mengalahkannya!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 19
     speakerName: Devina
-    text: Berhasil! Aku berhasil mengalahkannya!
+    text: Akhirnya... semuanya berakhir
     voiceClip: {fileID: 0}
     duration: 3
   - id: 20
     speakerName: Devina
-    text: Akhirnya... semuanya berakhir
+    text: Rara! Sekarang aku bisa menolongmu!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 21
     speakerName: Devina
-    text: Rara! Sekarang aku bisa menolongmu!
+    text: Bangun Rara... kita pulang
     voiceClip: {fileID: 0}
     duration: 3
   - id: 22
     speakerName: Devina
-    text: Bangun Rara... kita pulang
+    text: Rara?! Kenapa kamu menghilang?!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 23
     speakerName: Devina
-    text: Rara?! Kenapa kamu menghilang?!
+    text: Tidak! Jangan pergi! Rara!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 24
     speakerName: Devina
-    text: Tidak! Jangan pergi! Rara!
+    text: Ada surat... apa ini?
     voiceClip: {fileID: 0}
     duration: 3
   - id: 25
     speakerName: Devina
-    text: Ada surat... apa ini?
+    text: Dari siapa surat ini?
     voiceClip: {fileID: 0}
     duration: 3
   - id: 26
     speakerName: Devina
-    text: Dari siapa surat ini?
+    text: '"Jika kamu ingin temanmu selamat..."'
     voiceClip: {fileID: 0}
     duration: 3
   - id: 27
     speakerName: Devina
-    text: '"Jika kamu ingin temanmu selamat..."'
+    text: '"Datanglah kepadaku... - Sang Dukun"'
     voiceClip: {fileID: 0}
     duration: 3
   - id: 28
     speakerName: Devina
-    text: '"Datanglah kepadaku... - Sang Dukun"'
-    voiceClip: {fileID: 0}
-    duration: 3
-  - id: 29
-    speakerName: Devina
     text: Jadi... semua ini ulah dukun?
     voiceClip: {fileID: 0}
     duration: 3
-  - id: 30
+  - id: 29
     speakerName: Devina
     text: Rara masih bisa diselamatkan... tunggu aku, Rara!
     voiceClip: {fileID: 0}
