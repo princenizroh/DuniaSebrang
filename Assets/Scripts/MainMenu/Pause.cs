@@ -1,36 +1,31 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
-namespace Lilu
+namespace DS
 {
     public class Pause : MonoBehaviour
     {
-        [SerializeField] private GameObject pauseMenu;
-        [SerializeField] private GameObject settingsMenu;
-        [SerializeField] private GameObject brightnessMenu;
-        [SerializeField] private GameObject audioMenu;
+        [Header("Main Panels")]
         [SerializeField] private GameObject pauseButton;
-        [SerializeField] private GameObject ControlMenu;
+        [SerializeField] private GameObject pausePanel;
+        [SerializeField] private GameObject resumeButton;
 
-        // public SaveLoadManager saveLoadManager;
+        [Header("Sub Panels")]
+        [SerializeField] private GameObject settingsPanel;
+        [SerializeField] private GameObject controlPanel;
+
         private bool isPaused = false;
-        private bool isSetting = false;
-        private bool isBrightness = false;
-        private bool isAudio = false;
-        private bool isControl = false;
-
 
         void Update()
         {
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                if (isSetting || isAudio || isControl)
+                if (controlPanel.activeSelf)
                 {
-                    ResumeGame();
+                    BackToSettings(); 
                 }
-                else if (isBrightness)
+                else if (settingsPanel.activeSelf)
                 {
-                    CloseBrightness();
+                    BackToPause();
                 }
                 else if (isPaused)
                 {
@@ -43,109 +38,63 @@ namespace Lilu
             }
         }
 
+        public void OnPauseButtonPressed()
+        {
+            if (!isPaused)
+            {
+                PauseGame();
+            }
+        }
+
         public void PauseGame()
         {
             isPaused = true;
-            pauseMenu.SetActive(true);
-            pauseButton.SetActive(false); // Hide pause button
             Time.timeScale = 0f;
+
+            pausePanel.SetActive(true);
+            resumeButton.SetActive(true);
+            pauseButton.SetActive(false); // Sembunyikan tombol pause
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-            // PickUpManager.Instance.DisableSelection();
-            // PickUpManager.Instance.GetComponent<PickUpManager>().enabled = false;
         }
-
-        // public void SaveGame()
-        // {
-        //     saveLoadManager.SaveGame();
-        //     Debug.Log("Game Saved");
-        // }
 
         public void ResumeGame()
         {
             isPaused = false;
-            isSetting = false;
-            isBrightness = false;
-            isAudio = false;
-            isControl = false;
+            Time.timeScale = 1f;
 
-            pauseMenu.SetActive(false);
-            settingsMenu.SetActive(false);
-            brightnessMenu.SetActive(false);
-            audioMenu.SetActive(false);
-            pauseButton.SetActive(true); // Show pause button
-            ControlMenu.SetActive(false);
-
+            pausePanel.SetActive(false);
+            settingsPanel.SetActive(false);
+            controlPanel.SetActive(false);
+            resumeButton.SetActive(true);
+            pauseButton.SetActive(true); // Tampilkan tombol pause kembali
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
-            Time.timeScale = 1f;
-            // PickUpManager.Instance.EnableSelection();
-            // PickUpManager.Instance.GetComponent<PickUpManager>().enabled = true;
         }
 
-        public void MainMenu()
+        public void OpenSettings()
         {
-            Time.timeScale = 1f; 
-            SceneManager.LoadScene("MainMenu");
+            pausePanel.SetActive(false);
+            settingsPanel.SetActive(true);
         }
 
-        public void OpenDisplaySettings()
-        {
-            isSetting = true;
-            isBrightness = false;
-            isAudio = false;
-            isControl = false;
-
-            settingsMenu.SetActive(true);
-            brightnessMenu.SetActive(false);
-            audioMenu.SetActive(false);
-            ControlMenu.SetActive(false);
-
-        }
-
-        public void OpenBrightness()
-       {
-            isPaused = false;
-            isSetting = false;
-            isBrightness = true;
-            isAudio = false;
-            isControl = false;
-
-            settingsMenu.SetActive(false);
-            brightnessMenu.SetActive(true);
-            audioMenu.SetActive(false);
-            ControlMenu.SetActive(false);
-        }
-
-        public void OpenAudio()
-        {
-            isSetting = false;
-            isBrightness = false;
-            isAudio = true;
-            isControl = false;
-
-            settingsMenu.SetActive(false);
-            brightnessMenu.SetActive(false);
-            audioMenu.SetActive(true);
-            ControlMenu.SetActive(false);
-        }
         public void OpenControl()
         {
-            isSetting = false;
-            isBrightness = false;
-            isAudio = false;
-            isControl = true;
-
-            settingsMenu.SetActive(false);
-            brightnessMenu.SetActive(false);
-            audioMenu.SetActive(false);
-            ControlMenu.SetActive(true);
+            settingsPanel.SetActive(false);
+            controlPanel.SetActive(true);
         }
 
-        public void CloseBrightness()
+        public void BackToSettings()
         {
-            isBrightness = false;
-            brightnessMenu.SetActive(false);
+            controlPanel.SetActive(false);
+            settingsPanel.SetActive(true);
+        }
+
+        public void BackToPause()
+        {
+            settingsPanel.SetActive(false);
+            controlPanel.SetActive(false);
+            pausePanel.SetActive(true);
         }
     }
 }
