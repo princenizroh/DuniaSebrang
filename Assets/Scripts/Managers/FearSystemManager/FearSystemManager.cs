@@ -21,6 +21,14 @@ namespace DS
         public float viewDistance = 10f; 
         public LayerMask enemyLayer; 
 
+        [Header("AI References")]
+        public TakauAI[] takauAIs;
+        public KuntiAI[] kuntiAIs;
+        public HandAI[] handAIs; 
+
+        [Header("Chase Fear Settings")]
+        public float chaseFearIncreaseRate = 0.5f;
+
         private Collider fearCollider;
         private Transform playerTransform; 
 
@@ -33,6 +41,7 @@ namespace DS
         void Update()
         {
             bool enemyInSight = CheckEnemyInView();
+            bool enemyChasing = CheckEnemyChasing();
 
             if (Input.GetKey(KeyCode.RightControl) || Input.GetKey(KeyCode.LeftControl))
             {
@@ -47,6 +56,12 @@ namespace DS
             if (enemyInSight)
             {
                 AdjustFear(fearIncreaseRate * Time.deltaTime);
+            }
+
+            // Tambahan: jika ada enemy yang sedang chase, fear bertambah lebih cepat
+            if (enemyChasing)
+            {
+                AdjustFear(chaseFearIncreaseRate * Time.deltaTime);
             }
 
             fearCollider.enabled = transform.localScale.x > 0.01f;
@@ -72,6 +87,27 @@ namespace DS
                     
                     return true;
                 }
+            }
+            return false;
+        }
+
+        private bool CheckEnemyChasing()
+        {
+            // Cek semua TakauAI dan KuntiAI yang sudah di-assign di Inspector
+            foreach (var ai in takauAIs)
+            {
+                if (ai != null && Vector3.Distance(ai.transform.position, playerTransform.position) < viewDistance && ai.moveMode == MoveMode.chase)
+                    return true;
+            }
+            foreach (var ai in kuntiAIs)
+            {
+                if (ai != null && Vector3.Distance(ai.transform.position, playerTransform.position) < viewDistance && ai.moveMode == MoveMode.chase)
+                    return true;
+            }
+            foreach (var ai in handAIs)
+            {
+                if (ai != null && Vector3.Distance(ai.transform.position, playerTransform.position) < viewDistance && ai.moveMode == MoveMode.chase)
+                    return true;
             }
             return false;
         }
