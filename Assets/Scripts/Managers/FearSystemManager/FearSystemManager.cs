@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace DS
 {
@@ -31,12 +34,12 @@ namespace DS
         {
             bool enemyInSight = CheckEnemyInView();
 
-            if (Input.GetKey(KeyCode.K))
+            if (Input.GetKey(KeyCode.RightControl) || Input.GetKey(KeyCode.LeftControl))
             {
                 AdjustFear(scaleSpeed * Time.deltaTime);
             }
 
-            if (Input.GetKeyDown(KeyCode.K)) 
+            if (Input.GetKeyDown(KeyCode.RightControl) || Input.GetKeyDown(KeyCode.LeftControl))
             {
                 AdjustFear(-tapDecreaseAmount);
             }
@@ -72,5 +75,29 @@ namespace DS
             }
             return false;
         }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            // Draw view distance
+            Gizmos.color = new Color(1f, 0.5f, 0f, 0.3f); // Orange transparent
+            Gizmos.DrawWireSphere(transform.position, viewDistance);
+
+            // Draw view angle
+            Vector3 forward = transform.forward;
+            float halfAngle = viewAngle / 2f;
+            Quaternion leftRay = Quaternion.AngleAxis(-halfAngle, Vector3.up);
+            Quaternion rightRay = Quaternion.AngleAxis(halfAngle, Vector3.up);
+            Vector3 leftDir = leftRay * forward;
+            Vector3 rightDir = rightRay * forward;
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawRay(transform.position, leftDir * viewDistance);
+            Gizmos.DrawRay(transform.position, rightDir * viewDistance);
+
+            // Draw label for radius
+            Handles.color = Color.white;
+            Handles.Label(transform.position + Vector3.up * 1.5f, $"Fear View Radius: {viewDistance}m\nFear Angle: {viewAngle}°");
+        }
+#endif
     }
 }
