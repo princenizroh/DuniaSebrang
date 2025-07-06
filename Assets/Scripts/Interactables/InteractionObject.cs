@@ -34,6 +34,7 @@ namespace DS
         [Header("VFX Settings")]
         [SerializeField] private ParticleSystem extractionParticleEffect;
         [SerializeField] private ParticleSystem extractionCompleteEffect;
+        [SerializeField] private ColliderActiveBlockPlayerCollision blockHandler;
         
         private int currentExtractionCount = 0;
         private bool isBeingInteracted = false;
@@ -325,7 +326,6 @@ namespace DS
         private void HandleIndividualExtraction()
         {
             // Jika ada ColliderActiveBlockPlayerCollision di scene, nonaktifkan block (pintu)
-            var blockHandler = UnityEngine.Object.FindFirstObjectByType<ColliderActiveBlockPlayerCollision>();
             if (blockHandler != null)
             {
                 blockHandler.DisableBlock();

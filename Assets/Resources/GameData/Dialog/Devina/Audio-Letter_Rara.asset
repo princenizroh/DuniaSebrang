@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d4f200e077cbbb4286ff78870a34d60, type: 3}
+  m_Name: Audio-Letter_Rara
+  m_EditorClassIdentifier: 
+  id: 
+  dialogLines:
+  - id: 0
+    speakerName: Devina
+    text: Ada kertas
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 1
+    speakerName: Devina
+    text: Hah ini dari Rara
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 2
+    speakerName: Rara
+    text: Sapapun yang menemukan catatan ini jangan memasuki gedung tua.
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 3
+    speakerName: Rara
+    text: 'Tempat itu sangat berbahaya. '
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 4
+    speakerName: Rara
+    text: Jelmaan ritual dilakukan disana.
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 5
+    speakerName: Rara
+    text: Dunia yang saling bersinggungan ini membuat tatanan Dunia menjadi kacau.
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 6
+    speakerName: Rara
+    text: Ada seseorang yang sedang membuka Dunia Iblis dengan Dunia Manusia.
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 7
+    speakerName: Rara
+    text: Aku tahu orangnya siapa.
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 8
+    speakerName: Rara
+    text: Aku tidak ingin membahayakan seseorang terutama sahabatku Devina.
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 9
+    speakerName: Rara
+    text: Jadi aku berangkat sendirian. Maafkan aku Devina.
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 10
+    speakerName: Rara
+    text: Aku percaya yang membaca surat ini engkau Devina.
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 11
+    speakerName: Devina
+    text: Lagi-lagi kamu nekat sendirian Rara.
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 12
+    speakerName: Devina
+    text: Jika bertemu akan kupukul kamu.
+    voiceClip: {fileID: 0}
+    duration: 3
+  - id: 13
+    speakerName: Devina
+    text: Tunggu aku Rara.
+    voiceClip: {fileID: 0}
+    duration: 3
+  oneTimePlay: 1
