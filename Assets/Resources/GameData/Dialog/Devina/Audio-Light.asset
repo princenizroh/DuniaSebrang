@@ -40,4 +40,34 @@ MonoBehaviour:
     text: Supaya mereka tidak mengejarku
     voiceClip: {fileID: 0}
     duration: 3
+  - id: 5
+    speakerName: Hint
+    text: Tap Tap Right-CTRL for decrease light
+    voiceClip: {fileID: 0}
+    duration: 5
+  - id: 6
+    speakerName: Hint
+    text: Hold Right-CTRL for increase light
+    voiceClip: {fileID: 0}
+    duration: 5
+  - id: 7
+    speakerName: Hint
+    text: E for interact
+    voiceClip: {fileID: 0}
+    duration: 5
+  - id: 8
+    speakerName: Hint
+    text: Tap Tap E for Pull object
+    voiceClip: {fileID: 0}
+    duration: 5
+  - id: 9
+    speakerName: Hint
+    text: F for flashlight
+    voiceClip: {fileID: 0}
+    duration: 5
+  - id: 10
+    speakerName: Hint
+    text: Arrow for camera
+    voiceClip: {fileID: 0}
+    duration: 5
   oneTimePlay: 1

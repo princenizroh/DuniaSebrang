@@ -13,7 +13,6 @@ namespace DS
         
         private void OnTriggerEnter(Collider other)
         {
-            Debug.Log("Player Enter");
             InteractionObject interactionObject = other.GetComponent<InteractionObject>();
             if (interactionObject != null)
             {

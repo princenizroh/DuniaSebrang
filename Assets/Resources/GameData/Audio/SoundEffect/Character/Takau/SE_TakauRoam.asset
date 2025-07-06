@@ -18,6 +18,6 @@ MonoBehaviour:
   type: 1
   volume: 1
   loop: 0
-  minDistance: 27
-  maxDistance: 30
+  minDistance: 26.8
+  maxDistance: 40
   playOnAwake: 0

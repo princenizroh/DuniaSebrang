@@ -16,7 +16,7 @@ MonoBehaviour:
   dialogLines:
   - id: 0
     speakerName: Devina
-    text: Akhirnya keluar dari aula itu!
+    text: Akhirnya keluar dari ruangan itu!
     voiceClip: {fileID: 0}
     duration: 3
   - id: 1

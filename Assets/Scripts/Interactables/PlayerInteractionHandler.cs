@@ -286,6 +286,9 @@ namespace DS
             isInteracting = false;
             EnablePlayerControls();
             UpdateInteractionPrompt();
+            // Paksa panel interaksi di-hide setelah interaksi selesai
+            if (interactionPrompt != null)
+                interactionPrompt.SetActive(false);
 
             // Clear held object reference (but don't destroy - let the interaction object handle that)
             if (currentHeldObject != null)
@@ -446,13 +449,13 @@ namespace DS
 
                     if (currentInteractionObject.interactionType == InteractionType.SimpleInteraction)
                     {
-                        promptText = $"Spam E {currentInteractionObject.objectName}";
+                        promptText = $"Tekan E {currentInteractionObject.objectName}";
                     }
                     else if (currentInteractionObject.interactionType == InteractionType.ExtractableObject)
                     {
                         if (isInteracting)
                         {
-                            promptText = $"Keep pressing E to extract {currentInteractionObject.objectName}";
+                            promptText = $"Keep Spam E to extract {currentInteractionObject.objectName}";
                         }
                         else
                         {

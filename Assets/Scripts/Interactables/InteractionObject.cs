@@ -36,6 +36,9 @@ namespace DS
         [SerializeField] private ParticleSystem extractionCompleteEffect;
         [SerializeField] private ColliderActiveBlockPlayerCollision blockHandler;
         
+        [Header("Ending Settings")]
+        public bool isEndingObject = false;
+        
         private int currentExtractionCount = 0;
         private bool isBeingInteracted = false;
         private bool hasBeenInteracted = false;

@@ -146,6 +146,11 @@ namespace DS
 
         private void Update()
         {
+            if (moveMode == MoveMode.dying) 
+            {
+                animator.Play("Dying");
+                return;
+            }
             switch (moveMode)
             {
                 case MoveMode.chase:
@@ -179,6 +184,7 @@ namespace DS
 
         private void Chasing()
         {
+            if (moveMode == MoveMode.dying) return;
             if (currentTarget == null) // Jika tidak ada target, kembali ke wait
             {
                 if (showChaseDebug) Debug.Log("Takau: No target found, switching to wait");
@@ -303,6 +309,7 @@ namespace DS
 
         private void Waiting()
         {
+            if (moveMode == MoveMode.dying) return;
             agent.destination = transform.position;
             agent.speed = 0;
 
@@ -393,6 +400,7 @@ namespace DS
 
         private void Charging()
         {
+            if (moveMode == MoveMode.dying) return;
             if (!isCharging) return;
 
             // ACCELERATION SYSTEM untuk Charge menggunakan NavMeshAgent
@@ -507,6 +515,7 @@ namespace DS
 
         private void SwitchMoveMode(MoveMode _moveMode)
         {
+            if (moveMode == MoveMode.dying && _moveMode != MoveMode.dying) return;
             if (moveMode == _moveMode) return; // Prevent unnecessary switches
 
             // Exit current mode
@@ -613,6 +622,11 @@ namespace DS
 
         private void FieldOfView()
         {
+            if (moveMode == MoveMode.dying) 
+            {
+                isDetectTarget = false;
+                return;
+            }
             float extendedRadius = viewRadius + forwardVisionBonus;
             float chargeExtendedRadius = viewRadius + chargeForwardVisionBonus;
             float chargeSearchExtendedRadius = viewRadius + currentChargeSearchVisionBonus; // Even more extended during search
@@ -830,6 +844,7 @@ namespace DS
 
         private void HandleRotation()
         {
+            if (moveMode == MoveMode.dying) return;
             if (!useCustomRotation) return;
 
             Vector3 direction = Vector3.zero;
@@ -941,6 +956,7 @@ namespace DS
 
         private void Attacking()
         {
+            if (moveMode == MoveMode.dying) return;
             if (currentTarget == null)
             {
                 if (showChaseDebug) Debug.Log("Takau: No target during attack, switching to wait");

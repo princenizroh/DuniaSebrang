@@ -525,11 +525,7 @@ namespace DS
 
         private void SwitchMoveMode(MoveMode _moveMode)
         {
-             if (moveMode == MoveMode.dying && _moveMode != MoveMode.dying) 
-            {
-                Debug.Log("Takau: Cannot switch mode - AI is dead!");
-                return;
-            }
+            if (moveMode == MoveMode.dying && _moveMode != MoveMode.dying) return;
             if (moveMode == _moveMode) return; // Prevent unnecessary switches
 
             // Exit current mode

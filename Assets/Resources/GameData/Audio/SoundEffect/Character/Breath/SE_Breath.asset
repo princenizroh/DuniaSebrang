@@ -16,8 +16,8 @@ MonoBehaviour:
   AudioName: Breath
   audioClip: {fileID: 8300000, guid: e06bcaacab667694187cf5f89799c876, type: 3}
   type: 1
-  volume: 1
+  volume: 0.605
   loop: 0
-  minDistance: 0.8
+  minDistance: 1
   maxDistance: 15
   playOnAwake: 0

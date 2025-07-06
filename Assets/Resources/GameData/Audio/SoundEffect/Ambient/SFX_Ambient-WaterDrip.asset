@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea5724495876f4d46ac1ee994623da62, type: 3}
+  m_Name: SFX_Ambient-WaterDrip
+  m_EditorClassIdentifier: 
+  id: sfx_ambient-waterdrip
+  AudioName: 
+  audioClip: {fileID: 8300000, guid: 5e11f8d70da9c2f41b5e836b23a7e040, type: 3}
+  type: 1
+  volume: 1
+  loop: 0
+  minDistance: 4
+  maxDistance: 8
+  playOnAwake: 0
