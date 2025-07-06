@@ -375,6 +375,9 @@ namespace DS
             currentExtractionCount++;
             Debug.Log($"Extraction progress: {currentExtractionCount}/{extractionCount}");
 
+            // Play particle effect setiap kali E dipencet
+            PlayExtractionParticleEffect();
+
             // Update UI or visual feedback
             OnExtractionProgress?.Invoke(currentExtractionCount, extractionCount);
 
@@ -446,20 +449,14 @@ namespace DS
             if (extractionParticleEffect != null)
             {
                 // Pastikan particle tidak loop
+                extractionParticleEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                 var main = extractionParticleEffect.main;
                 main.loop = false;
                 main.playOnAwake = false; // Jangan auto play saat start
-                
-                // Atur durasi particle (opsional)
                 main.duration = 0.5f; // 0.5 detik
-                
-                // Atur start lifetime untuk berapa lama particle hidup
                 main.startLifetime = 1f; // 1 detik
-                
-                // Atur emission rate (berapa banyak particle per detik)
                 var emission = extractionParticleEffect.emission;
                 emission.rateOverTime = 50f; // 50 particle per detik
-                
                 Debug.Log($"Particle effect setup complete for {objectName}");
             }
         }
