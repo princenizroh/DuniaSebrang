@@ -530,16 +530,17 @@ namespace DS
             Debug.Log("Check inspector - components should now be properly assigned!");
         }
         
+#if UNITY_EDITOR
         // Visual debugging
         private void OnDrawGizmos()
         {
             if (!showGizmosWhenActive || !isCurrentlyActive) return;
             if (hitCollider == null) return;
-            
+
             // Draw hit collider bounds when active
             Gizmos.color = hasHitPlayer ? Color.red : Color.yellow;
             Gizmos.matrix = Matrix4x4.TRS(transform.position, transform.rotation, transform.localScale);
-            
+
             if (hitCollider is BoxCollider box)
             {
                 Gizmos.DrawWireCube(box.center, box.size);
@@ -553,52 +554,53 @@ namespace DS
                 // Approximate capsule as sphere for simplicity
                 Gizmos.DrawWireSphere(capsule.center, capsule.radius);
             }
-            
+
             Gizmos.matrix = Matrix4x4.identity;
         }
-        
+
         // Debug GUI
         private void OnGUI()
         {
             if (!showDebug) return;
-            
+
             GUILayout.BeginArea(new Rect(Screen.width - 320, 10, 300, 200));
             GUILayout.Label("=== TAKAU HIT COLLIDER DEBUG ===");
             GUILayout.Label($"Is Active: {isCurrentlyActive}");
             GUILayout.Label($"Has Hit Player: {hasHitPlayer}");
-            
+
             if (takauAI != null)
             {
                 GUILayout.Label($"Takau Mode: {takauAI.moveMode}");
             }
-            
+
             if (isCurrentlyActive)
             {
                 float timeActive = Time.time - activationTime;
                 float timeRemaining = activeDuration - timeActive;
                 GUILayout.Label($"Active Time: {timeActive:F1}s");
                 GUILayout.Label($"Time Remaining: {timeRemaining:F1}s");
-                
+
                 bool playerInRange = IsPlayerInRange();
                 GUILayout.Label($"Player In Range: {playerInRange}");
             }
-            
+
             if (GUILayout.Button("Manual Enable"))
             {
                 ActivateHitCollider();
             }
-            
+
             if (GUILayout.Button("Manual Disable"))
             {
                 DeactivateHitCollider();
             }
-            
+
             if (GUILayout.Button("Reset Hit Status"))
             {
                 ResetHitStatus();
             }
-            
+
             GUILayout.EndArea();
         }
+#endif
     }
 }

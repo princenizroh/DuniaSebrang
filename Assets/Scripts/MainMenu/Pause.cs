@@ -5,7 +5,6 @@ namespace DS
     public class Pause : MonoBehaviour
     {
         [Header("Main Panels")]
-        [SerializeField] private GameObject pauseButton;
         [SerializeField] private GameObject pausePanel;
         [SerializeField] private GameObject resumeButton;
 
@@ -53,8 +52,10 @@ namespace DS
 
             pausePanel.SetActive(true);
             resumeButton.SetActive(true);
-            pauseButton.SetActive(false); // Sembunyikan tombol pause
             Cursor.lockState = CursorLockMode.None;
+#if UNITY_EDITOR
+    Cursor.lockState = CursorLockMode.None;
+#endif
             Cursor.visible = true;
         }
 
@@ -67,8 +68,10 @@ namespace DS
             settingsPanel.SetActive(false);
             controlPanel.SetActive(false);
             resumeButton.SetActive(true);
-            pauseButton.SetActive(true); // Tampilkan tombol pause kembali
             Cursor.lockState = CursorLockMode.Locked;
+#if UNITY_EDITOR
+    Cursor.lockState = CursorLockMode.None;
+#endif
             Cursor.visible = false;
         }
 

@@ -19,6 +19,6 @@ MonoBehaviour:
   spawnRotation: {x: -0, y: 0, z: 0}
   sceneName: Level-1
   saveAudioData: {fileID: 0}
-  areaName: 
-  lastSavePlayTime: 966.7297
-  lastSaveDateTime: 2025-07-05 17.32.18
+  areaName: Panggung
+  lastSavePlayTime: 1010.97675
+  lastSaveDateTime: 2025-07-06 09:59:32

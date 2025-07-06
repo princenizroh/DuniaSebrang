@@ -93,21 +93,33 @@ namespace DS
 
         private bool CheckEnemyChasing()
         {
-            // Cek semua TakauAI dan KuntiAI yang sudah di-assign di Inspector
+            // Cek semua AI yang sedang chase dan BELUM dalam attack range
             foreach (var ai in takauAIs)
             {
-                if (ai != null && Vector3.Distance(ai.transform.position, playerTransform.position) < viewDistance && ai.moveMode == MoveMode.chase)
-                    return true;
+                if (ai != null && ai.moveMode == MoveMode.chase)
+                {
+                    float dist = Vector3.Distance(ai.transform.position, playerTransform.position);
+                    if (dist < viewDistance && dist > ai.attackRange)
+                        return true;
+                }
             }
             foreach (var ai in kuntiAIs)
             {
-                if (ai != null && Vector3.Distance(ai.transform.position, playerTransform.position) < viewDistance && ai.moveMode == MoveMode.chase)
-                    return true;
+                if (ai != null && ai.moveMode == MoveMode.chase)
+                {
+                    float dist = Vector3.Distance(ai.transform.position, playerTransform.position);
+                    if (dist < viewDistance && dist > ai.attackRange)
+                        return true;
+                }
             }
             foreach (var ai in handAIs)
             {
-                if (ai != null && Vector3.Distance(ai.transform.position, playerTransform.position) < viewDistance && ai.moveMode == MoveMode.chase)
-                    return true;
+                if (ai != null && ai.moveMode == MoveMode.chase)
+                {
+                    float dist = Vector3.Distance(ai.transform.position, playerTransform.position);
+                    if (dist < viewDistance && dist > ai.attackRange)
+                        return true;
+                }
             }
             return false;
         }

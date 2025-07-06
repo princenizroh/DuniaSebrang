@@ -359,7 +359,7 @@ namespace DS
 
                     if (currentInteractionObject.interactionType == InteractionType.SimpleInteraction)
                     {
-                        promptText = $"Press E to interact with {currentInteractionObject.objectName}";
+                        promptText = $"Spam E {currentInteractionObject.objectName}";
                     }
                     else if (currentInteractionObject.interactionType == InteractionType.ExtractableObject)
                     {
@@ -369,7 +369,7 @@ namespace DS
                         }
                         else
                         {
-                            promptText = $"Press E to extract {currentInteractionObject.objectName}";
+                            promptText = $"Spam E to extract {currentInteractionObject.objectName}";
                         }
                     }
 

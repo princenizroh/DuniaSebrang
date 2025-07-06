@@ -19,6 +19,6 @@ MonoBehaviour:
   spawnRotation: {x: -0, y: 0, z: 0}
   sceneName: Level-1
   saveAudioData: {fileID: 11400000, guid: 078274468144903448b6137da8679623, type: 2}
-  areaName: Parking
-  lastSavePlayTime: 81.01471
-  lastSaveDateTime: 2025-07-05 10:11:39
+  areaName: Hutan
+  lastSavePlayTime: 475.6574
+  lastSaveDateTime: 2025-07-06 07:46:26

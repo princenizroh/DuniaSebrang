@@ -19,6 +19,6 @@ MonoBehaviour:
   spawnRotation: {x: -0, y: 0, z: 0}
   sceneName: Level-1
   saveAudioData: {fileID: 0}
-  areaName: 
-  lastSavePlayTime: 2686.2224
-  lastSaveDateTime: 2025-07-05 14:16:25
+  areaName: Perpus
+  lastSavePlayTime: 738.2899
+  lastSaveDateTime: 2025-07-06 09:36:36

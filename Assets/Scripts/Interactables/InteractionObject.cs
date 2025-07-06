@@ -1,6 +1,7 @@
 using UnityEngine;
 using DS.Data.Dialog;
 using System.Collections;
+using DS; // Tambahkan agar bisa akses ColliderActiveBlockPlayerCollision
 
 namespace DS
 {
@@ -26,6 +27,14 @@ namespace DS
         [SerializeField] private bool moveToHand = true; // Move this object to hand instead of creating clone
         [SerializeField] private float postDialogDelay = 2f; // Delay after dialog finishes
         
+        [Header("Objective Settings")]
+        [SerializeField] private bool willKillKunti = false; 
+        [SerializeField] private bool willKillTakau = false; 
+        
+        [Header("VFX Settings")]
+        [SerializeField] private ParticleSystem extractionParticleEffect;
+        [SerializeField] private ParticleSystem extractionCompleteEffect;
+        
         private int currentExtractionCount = 0;
         private bool isBeingInteracted = false;
         private bool hasBeenInteracted = false;
@@ -46,7 +55,16 @@ namespace DS
                                   !isProcessingInteraction &&
                                   (!hasBeenInteracted || interactionType == InteractionType.ExtractableObject) &&
                                   gameObject != null; // Make sure object still exists
-        
+
+        [Header("Extraction Manager Integration")]
+        [SerializeField] private bool isPartOfExtractionChain = false; // Apakah object ini bagian dari chain 5 pasak
+        [SerializeField] private bool registerWithExtractionManager = true;
+        private void Start()
+        {
+            // Setup particle effect jika ada
+            SetupParticleEffect();
+        }
+
         public void StartInteraction(PlayerInteractionHandler player)
         {
             if (!CanInteract) 
@@ -180,9 +198,6 @@ namespace DS
                     originalPosition = transform.position;
                     originalRotation = transform.rotation;
                     originalTransformStored = true;
-                    
-                    // Move to hand
-                    player.MoveObjectToHand(gameObject);
                 }
                 
                 // Check if cancelled after moving to hand
@@ -220,31 +235,64 @@ namespace DS
                 {
                     // Object extracted successfully
                     Debug.Log($"{objectName} extraction complete!");
-                    
-                    // Clear player's held object before destroying
-                    player.ClearHeldObject();
-                    
+                    // TAMBAHAN: Play extraction complete effect
+                    PlayExtractionCompleteEffect();
+
+                    // Pindahkan objek ke tangan setelah extraction selesai
+                    if (isHoldable && moveToHand)
+                    {
+                        player.MoveObjectToHand(gameObject);
+                    }
+                    if (isPartOfExtractionChain && registerWithExtractionManager)
+                        {
+                            // Register extraction dengan ExtractionManager
+                            if (ExtractionManager.Instance != null)
+                            {
+                                ExtractionManager.Instance.RegisterExtraction(this);
+                                Debug.Log($"Registered {objectName} extraction with ExtractionManager");
+                            }
+                            else
+                            {
+                                Debug.LogWarning($"ExtractionManager not found! Cannot register {objectName} extraction.");
+                                
+                                // Fallback: Handle individual killing if willKillKunti is true
+                                if (willKillTakau)
+                                {
+                                    var kuntiAI = UnityEngine.Object.FindFirstObjectByType<DS.TakauAI>();
+                                    if (kuntiAI != null)
+                                    {
+                                        kuntiAI.SetDyingMode();
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Handle individual extraction (tidak bagian dari chain)
+                            HandleIndividualExtraction();
+                        }
+
                     // Play reverse reaching animation
                     player.PlayReverseReachingAnimation();
-                    
+
                     // Wait for reverse reaching animation to complete
                     yield return new WaitForSeconds(2f);
-                    
+
                     // Check if cancelled during animation
                     if (isCancelling) yield break;
-                    
+
                     // Play idle animation
                     player.PlayIdleAnimation();
-                    
+
                     // Destroy the object after successful extraction
                     if (isHoldable && moveToHand)
                     {
                         Destroy(gameObject);
                     }
-                    
+
                     // Object is now extracted
                     hasBeenInteracted = true;
-                    
+
                     // Notify player that interaction is complete
                     player.OnInteractionComplete();
                 }
@@ -257,13 +305,33 @@ namespace DS
             {
                 // Always cleanup state
                 CleanupInteractionState();
+                
             }
         }
         
+        private void HandleIndividualExtraction()
+        {
+            // Jika ada ColliderActiveBlockPlayerCollision di scene, nonaktifkan block (pintu)
+            var blockHandler = UnityEngine.Object.FindFirstObjectByType<ColliderActiveBlockPlayerCollision>();
+            if (blockHandler != null)
+            {
+                blockHandler.DisableBlock();
+            }
+
+            // Jika extraction ini memang untuk membunuh KuntiAI (individual)
+            if (willKillKunti)
+            {
+                var kuntiAI = UnityEngine.Object.FindFirstObjectByType<DS.KuntiAI>();
+                if (kuntiAI != null)
+                {
+                    kuntiAI.SetDyingMode();
+                }
+            }
+        }
         private IEnumerator PlayAllDialogLines()
         {
             if (dialogData == null || dialogData.dialogLines.Count == 0) yield break;
-            
+
             for (int i = 0; i < dialogData.dialogLines.Count; i++)
             {
                 DS.DialogManager.Instance?.PlaySpecificLine(dialogData, i);
@@ -277,7 +345,10 @@ namespace DS
             {
                 currentExtractionCount++;
                 Debug.Log($"Extraction progress: {currentExtractionCount}/{extractionCount}");
-                
+
+                // PERBAIKAN: Tampilkan particle effect setiap kali dipress dengan safety check
+                PlayExtractionParticleEffect();
+
                 // Visual feedback untuk extraction progress
                 if (currentExtractionCount < extractionCount)
                 {
@@ -289,26 +360,89 @@ namespace DS
                 }
             }
         }
+        private void PlayExtractionParticleEffect()
+        {
+            if (extractionParticleEffect != null)
+            {
+                // Pastikan particle tidak looping
+                var main = extractionParticleEffect.main;
+                main.loop = false;
+                
+                // Stop particle terlebih dahulu jika masih playing (untuk reset)
+                if (extractionParticleEffect.isPlaying)
+                {
+                    extractionParticleEffect.Stop();
+                }
+                
+                // Play particle effect
+                extractionParticleEffect.Play();
+                
+                Debug.Log($"Played extraction particle effect for {objectName}");
+            }
+            else
+            {
+                Debug.LogWarning($"No particle effect assigned to {objectName}!");
+            }
+        }
+        private void SetupParticleEffect()
+        {
+            if (extractionParticleEffect != null)
+            {
+                // Pastikan particle tidak loop
+                var main = extractionParticleEffect.main;
+                main.loop = false;
+                main.playOnAwake = false; // Jangan auto play saat start
+                
+                // Atur durasi particle (opsional)
+                main.duration = 0.5f; // 0.5 detik
+                
+                // Atur start lifetime untuk berapa lama particle hidup
+                main.startLifetime = 1f; // 1 detik
+                
+                // Atur emission rate (berapa banyak particle per detik)
+                var emission = extractionParticleEffect.emission;
+                emission.rateOverTime = 50f; // 50 particle per detik
+                
+                Debug.Log($"Particle effect setup complete for {objectName}");
+            }
+        }
+        private void PlayExtractionCompleteEffect()
+        {
+            if (extractionCompleteEffect != null)
+            {
+                var main = extractionCompleteEffect.main;
+                main.loop = false;
+                
+                if (extractionCompleteEffect.isPlaying)
+                {
+                    extractionCompleteEffect.Stop();
+                }
+                
+                extractionCompleteEffect.Play();
+                Debug.Log($"Played extraction complete effect for {objectName}");
+            }
+        }
+        
         
         public void CancelInteraction(PlayerInteractionHandler player)
         {
             if (isBeingInteracted && !isCancelling)
             {
                 Debug.Log($"Cancelling interaction with {objectName}. Progress lost!");
-                
+
                 // Set cancellation flag immediately
                 isCancelling = true;
-                
+
                 // Stop any running coroutines
                 if (currentInteractionCoroutine != null)
                 {
                     StopCoroutine(currentInteractionCoroutine);
                     currentInteractionCoroutine = null;
                 }
-                
+
                 // Reset extraction progress completely
                 currentExtractionCount = 0;
-                
+
                 // Return object to original position if it was moved to hand
                 if (isHoldable && moveToHand && originalTransformStored)
                 {
@@ -318,23 +452,23 @@ namespace DS
                     {
                         objCollider.enabled = true;
                     }
-                    
+
                     // Return to original position
                     transform.SetParent(originalParent);
                     transform.position = originalPosition;
                     transform.rotation = originalRotation;
-                    
+
                     // Clear stored transform data
                     originalTransformStored = false;
                     originalParent = null;
                 }
-                
+
                 // Clear player's held object reference
                 player.ClearHeldObject();
-                
+
                 // Immediately play reverse reaching animation
                 player.PlayReverseReachingAnimation();
-                
+
                 // Start coroutine to handle animation transition
                 StartCoroutine(HandleCancellationAnimation(player));
             }
