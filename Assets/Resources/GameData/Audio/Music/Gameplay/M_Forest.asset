@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea5724495876f4d46ac1ee994623da62, type: 3}
   m_Name: M_Forest
   m_EditorClassIdentifier: 
-  id: M_forest
+  id: m_forest
   AudioName: Forest
-  audioClip: {fileID: 8300000, guid: 3fdd359994929fb4ba83e4dc65b68aef, type: 3}
+  audioClip: {fileID: 8300000, guid: ec3ed99bef3e14045a8ae4cf867075de, type: 3}
   type: 0
   volume: 1
   loop: 1
-  minDistance: 20
-  maxDistance: 40
+  minDistance: 28.3
+  maxDistance: 31.9
   playOnAwake: 0

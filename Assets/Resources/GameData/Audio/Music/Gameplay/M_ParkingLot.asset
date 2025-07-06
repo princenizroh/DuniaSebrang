@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: M_ParkingLot
   m_EditorClassIdentifier: 
   id: m_parkinglot
-  AudioName: Parkir
-  audioClip: {fileID: 8300000, guid: c55cb9ad6d606d54688740a726b14ddb, type: 3}
+  AudioName: 
+  audioClip: {fileID: 8300000, guid: 144ecca781a0a4e41912bc7a398af947, type: 3}
   type: 0
   volume: 1
-  loop: 1
-  minDistance: 20
-  maxDistance: 40
+  loop: 0
+  minDistance: 44.9
+  maxDistance: 57.3
   playOnAwake: 0
