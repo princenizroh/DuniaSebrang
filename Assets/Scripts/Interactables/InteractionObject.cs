@@ -40,6 +40,7 @@ namespace DS
         private bool hasBeenInteracted = false;
         private bool isCancelling = false; // Flag to prevent new interactions during cancellation
         private bool isProcessingInteraction = false; // Flag to prevent rapid re-interaction
+        private bool isExtracted = false; // Tambahan deklarasi field isExtracted
         
         // Store original transform data for cancellation
         private Transform originalParent;
@@ -50,11 +51,23 @@ namespace DS
         // Coroutine references for cleanup
         private Coroutine currentInteractionCoroutine;
         
-        public bool CanInteract => !isBeingInteracted && 
-                                  !isCancelling && 
-                                  !isProcessingInteraction &&
-                                  (!hasBeenInteracted || interactionType == InteractionType.ExtractableObject) &&
-                                  gameObject != null; // Make sure object still exists
+        // Modify CanInteract property to prevent interaction with completed objects
+        public bool CanInteract
+        {
+            get
+            {
+                if (interactionType == InteractionType.ExtractableObject)
+                {
+                    return !isExtracted; // Can't interact if already extracted
+                }
+                return true;
+            }
+        }
+        public bool IsExtracted
+        {
+            get { return isExtracted; }
+        }
+
 
         [Header("Extraction Manager Integration")]
         [SerializeField] private bool isPartOfExtractionChain = false; // Apakah object ini bagian dari chain 5 pasak
@@ -338,26 +351,70 @@ namespace DS
                 yield return new WaitForSeconds(dialogData.dialogLines[i].duration);
             }
         }
+        public bool IsExtractionComplete()
+        {
+            if (interactionType == InteractionType.ExtractableObject)
+            {
+                return currentExtractionCount >= extractionCount;
+            }
+            return false;
+        }
+
         
         public void ProcessExtraction()
         {
-            if (interactionType == InteractionType.ExtractableObject && isBeingInteracted && !isCancelling)
+            if (interactionType != InteractionType.ExtractableObject) return;
+            
+            // FIX: Check if already complete
+            if (IsExtractionComplete())
             {
-                currentExtractionCount++;
-                Debug.Log($"Extraction progress: {currentExtractionCount}/{extractionCount}");
+                Debug.Log($"{objectName} extraction already complete!");
+                return;
+            }
 
-                // PERBAIKAN: Tampilkan particle effect setiap kali dipress dengan safety check
-                PlayExtractionParticleEffect();
+            currentExtractionCount++;
+            Debug.Log($"Extraction progress: {currentExtractionCount}/{extractionCount}");
 
-                // Visual feedback untuk extraction progress
-                if (currentExtractionCount < extractionCount)
-                {
-                    Debug.Log($"Keep pressing E! {extractionCount - currentExtractionCount} more times needed.");
-                }
-                else
-                {
-                    Debug.Log($"{objectName} extraction complete!");
-                }
+            // Update UI or visual feedback
+            OnExtractionProgress?.Invoke(currentExtractionCount, extractionCount);
+
+            // Check if extraction is complete
+            if (currentExtractionCount >= extractionCount)
+            {
+                CompleteExtraction();
+            }
+        }
+        private void CompleteExtraction()
+        {
+            // FIX: Add completion guard
+            if (isExtracted)
+            {
+                Debug.Log($"{objectName} already extracted!");
+                return;
+            }
+
+            Debug.Log($"{objectName} extraction complete!");
+            isExtracted = true;
+            
+            // Move object to hand
+            if (currentInteractionHandler != null)
+            {
+                currentInteractionHandler.MoveObjectToHand(gameObject);
+            }
+
+            // Trigger completion event
+            OnExtractionComplete?.Invoke();
+            
+            // Notify extraction manager if registered
+            if (isPartOfExtractionChain && extractionManager != null)
+            {
+                extractionManager.OnObjectExtracted(objectName);
+            }
+
+            // Complete the interaction
+            if (currentInteractionHandler != null)
+            {
+                currentInteractionHandler.OnInteractionComplete();
             }
         }
         private void PlayExtractionParticleEffect()
@@ -367,16 +424,16 @@ namespace DS
                 // Pastikan particle tidak looping
                 var main = extractionParticleEffect.main;
                 main.loop = false;
-                
+
                 // Stop particle terlebih dahulu jika masih playing (untuk reset)
                 if (extractionParticleEffect.isPlaying)
                 {
                     extractionParticleEffect.Stop();
                 }
-                
+
                 // Play particle effect
                 extractionParticleEffect.Play();
-                
+
                 Debug.Log($"Played extraction particle effect for {objectName}");
             }
             else
@@ -528,5 +585,11 @@ namespace DS
             yield return new WaitForSeconds(delay);
             player.PlayIdleAnimation();
         }
+
+        // Tambahan deklarasi agar error hilang
+        public event System.Action<int, int> OnExtractionProgress;
+        public event System.Action OnExtractionComplete;
+        private PlayerInteractionHandler currentInteractionHandler;
+        private ExtractionManager extractionManager;
     }
 }

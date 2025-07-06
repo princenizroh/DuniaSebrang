@@ -41,6 +41,11 @@ namespace DS
         // Box collider trigger for interaction detection
         private BoxCollider interactionTrigger;
 
+        // FIX: Add flags to prevent race condition
+        private bool isProcessingCompletion = false;
+        private bool interactionJustCompleted = false;
+        private float completionCooldown = 0f;
+
         private void Awake()
         {
             playerRigidbody = GetComponent<Rigidbody>();
@@ -72,18 +77,32 @@ namespace DS
 
         private void Update()
         {
-            // Only check movement if player controls are enabled
-            if (!isInteracting)
+            // FIX: Update completion cooldown
+            if (completionCooldown > 0f)
             {
-                CheckMovement();
+                completionCooldown -= Time.deltaTime;
+                if (completionCooldown <= 0f)
+                {
+                    interactionJustCompleted = false;
+                }
             }
-            else
+
+            // FIX: Don't check movement if we're processing completion or just completed
+            if (!isProcessingCompletion && !interactionJustCompleted)
             {
-                // If we're in an extractable interaction, still check for movement to cancel
-                if (currentInteractionObject != null &&
-                    currentInteractionObject.interactionType == InteractionType.ExtractableObject)
+                // Only check movement if player controls are enabled
+                if (!isInteracting)
                 {
                     CheckMovement();
+                }
+                else
+                {
+                    // If we're in an extractable interaction, still check for movement to cancel
+                    if (currentInteractionObject != null &&
+                        currentInteractionObject.interactionType == InteractionType.ExtractableObject)
+                    {
+                        CheckMovement();
+                    }
                 }
             }
 
@@ -109,6 +128,12 @@ namespace DS
 
         private void CheckMovement()
         {
+            // FIX: Don't check movement if we're processing completion
+            if (isProcessingCompletion || interactionJustCompleted)
+            {
+                return;
+            }
+
             float horizontal = Input.GetAxis("Horizontal");
             float vertical = Input.GetAxis("Vertical");
 
@@ -120,6 +145,13 @@ namespace DS
                 currentInteractionObject != null &&
                 currentInteractionObject.interactionType == InteractionType.ExtractableObject)
             {
+                // FIX: Check if extraction is complete before cancelling
+                if (currentInteractionObject.IsExtractionComplete())
+                {
+                    Debug.Log("Extraction already complete. Ignoring movement cancellation.");
+                    return;
+                }
+
                 Debug.Log("Movement detected during extraction. Cancelling interaction...");
                 CancelCurrentInteraction();
             }
@@ -127,6 +159,12 @@ namespace DS
 
         private void HandleInteractionInput()
         {
+            // FIX: Don't handle input if we're processing completion
+            if (isProcessingCompletion || interactionJustCompleted)
+            {
+                return;
+            }
+
             if (Input.GetKeyDown(interactionKey))
             {
                 if (currentInteractionObject != null && !isInteracting)
@@ -139,6 +177,13 @@ namespace DS
                     // Continue extractable interaction
                     if (currentInteractionObject.interactionType == InteractionType.ExtractableObject)
                     {
+                        // FIX: Check if extraction is already complete
+                        if (currentInteractionObject.IsExtractionComplete())
+                        {
+                            Debug.Log("Extraction already complete. Ignoring input.");
+                            return;
+                        }
+
                         currentInteractionObject.ProcessExtraction();
                     }
                 }
@@ -171,8 +216,22 @@ namespace DS
 
         private void CancelCurrentInteraction()
         {
+            // FIX: Don't cancel if we're processing completion or just completed
+            if (isProcessingCompletion || interactionJustCompleted)
+            {
+                Debug.Log("Interaction completion in progress. Ignoring cancellation.");
+                return;
+            }
+
             if (currentInteractionObject != null && isInteracting)
             {
+                // FIX: Double-check if extraction is complete before cancelling
+                if (currentInteractionObject.IsExtractionComplete())
+                {
+                    Debug.Log("Extraction is complete. Not cancelling interaction.");
+                    return;
+                }
+
                 Debug.Log($"Movement detected - cancelling interaction with {currentInteractionObject.objectName}");
 
                 // Force animation override before cancelling
@@ -213,9 +272,15 @@ namespace DS
             forceAnimationOverride = false;
         }
 
+        // FIX: Add method to handle completion properly
         public void OnInteractionComplete()
         {
             Debug.Log("Interaction completed");
+
+            // FIX: Set completion flags to prevent race condition
+            isProcessingCompletion = true;
+            interactionJustCompleted = true;
+            completionCooldown = 1f; // 1 second cooldown
 
             // Called when interaction is finished
             isInteracting = false;
@@ -228,6 +293,16 @@ namespace DS
                 Debug.Log($"Clearing held object reference: {currentHeldObject.name}");
                 currentHeldObject = null;
             }
+
+            // FIX: Reset processing flag after a short delay
+            StartCoroutine(ResetProcessingFlag());
+        }
+
+        // FIX: Add coroutine to reset processing flag
+        private IEnumerator ResetProcessingFlag()
+        {
+            yield return new WaitForSeconds(0.5f);
+            isProcessingCompletion = false;
         }
 
         public void PlayReachingAnimation()
@@ -335,9 +410,14 @@ namespace DS
         {
             if (currentInteractionObject == interactionObject)
             {
-                if (isInteracting)
+                // FIX: Don't cancel if we're processing completion or just completed
+                if (isInteracting && !isProcessingCompletion && !interactionJustCompleted)
                 {
-                    CancelCurrentInteraction();
+                    // FIX: Only cancel if extraction is not complete
+                    if (!currentInteractionObject.IsExtractionComplete())
+                    {
+                        CancelCurrentInteraction();
+                    }
                 }
 
                 currentInteractionObject = null;
@@ -351,6 +431,13 @@ namespace DS
 
             if (currentInteractionObject != null && currentInteractionObject.CanInteract)
             {
+                // FIX: Don't show prompt if extraction is complete
+                if (currentInteractionObject.IsExtractionComplete())
+                {
+                    interactionPrompt.SetActive(false);
+                    return;
+                }
+
                 interactionPrompt.SetActive(true);
 
                 if (interactionText != null)
@@ -478,7 +565,5 @@ namespace DS
                 }
             }
         }
-        
-        
     }
 }
