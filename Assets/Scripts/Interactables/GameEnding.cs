@@ -462,7 +462,7 @@ namespace DS
         {
             if (takauAI != null)
             {
-                takauAI.SetDyingMode();
+                takauAI.Dying();
                 Debug.Log("GameEndingMonitor: Debug - Forced Takau death");
             }
         }

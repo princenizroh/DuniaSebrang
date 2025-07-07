@@ -276,37 +276,6 @@ namespace DS
             }
         }
 
-        private void OnPlayerCaught()
-        {
-            if (showChaseDebug) Debug.Log("Takau successfully caught the player!");
-            agent.isStopped = true;
-            isDetectTarget = false;
-
-            // Try to kill player using PlayerDeathHandler
-            if (currentTarget != null)
-            {
-                PlayerDeathHandler deathHandler = currentTarget.GetComponent<PlayerDeathHandler>();
-
-                if (deathHandler == null)
-                {
-                    // Try in parent or children
-                    deathHandler = currentTarget.GetComponentInParent<PlayerDeathHandler>();
-                    if (deathHandler == null)
-                        deathHandler = currentTarget.GetComponentInChildren<PlayerDeathHandler>();
-                }
-
-                if (deathHandler != null && deathHandler.CanDie())
-                {
-                    if (showChaseDebug) Debug.Log("★★★ KILLING PLAYER via PlayerDeathHandler (caught) ★★★");
-                    deathHandler.Die("Caught by Takau");
-                }
-                else
-                {
-                    if (showChaseDebug) Debug.LogWarning("Player caught but no PlayerDeathHandler found or player cannot die!");
-                }
-            }
-        }
-
         private void Waiting()
         {
             if (moveMode == MoveMode.dying) return;
@@ -351,6 +320,38 @@ namespace DS
                 currentTimeWaiting += Time.deltaTime;
             }
         }
+
+        private void OnPlayerCaught()
+        {
+            if (showChaseDebug) Debug.Log("Takau successfully caught the player!");
+            agent.isStopped = true;
+            isDetectTarget = false;
+
+            // Try to kill player using PlayerDeathHandler
+            if (currentTarget != null)
+            {
+                PlayerDeathHandler deathHandler = currentTarget.GetComponent<PlayerDeathHandler>();
+
+                if (deathHandler == null)
+                {
+                    // Try in parent or children
+                    deathHandler = currentTarget.GetComponentInParent<PlayerDeathHandler>();
+                    if (deathHandler == null)
+                        deathHandler = currentTarget.GetComponentInChildren<PlayerDeathHandler>();
+                }
+
+                if (deathHandler != null && deathHandler.CanDie())
+                {
+                    if (showChaseDebug) Debug.Log("★★★ KILLING PLAYER via PlayerDeathHandler (caught) ★★★");
+                    deathHandler.Die("Caught by Takau");
+                }
+                else
+                {
+                    if (showChaseDebug) Debug.LogWarning("Player caught but no PlayerDeathHandler found or player cannot die!");
+                }
+            }
+        }
+
 
         private void ChargeSearching()
         {
@@ -397,7 +398,71 @@ namespace DS
                 currentChargeSearchTime += Time.deltaTime;
             }
         }
+        private void Attacking()
+        {
+            if (moveMode == MoveMode.dying) return;
+            if (currentTarget == null)
+            {
+                if (showChaseDebug) Debug.Log("Takau: No target during attack, switching to wait");
+                SwitchMoveMode(MoveMode.wait);
+                return;
+            }
 
+            // Stop movement during attack
+            agent.destination = transform.position;
+            agent.speed = 0;
+
+            currentAttackTime += Time.deltaTime;
+
+            if (showChaseDebug)
+            {
+                Debug.Log($"Takau attacking! Time: {currentAttackTime:F1}s / {attackDuration:F1}s");
+            }
+
+            // Attack finished
+            if (currentAttackTime >= attackDuration)
+            {
+                if (showChaseDebug) Debug.Log("Takau: Attack finished");
+
+                // Execute attack effect
+                OnPlayerAttacked();
+
+                // Check if player is still close for another attack or if we should chase
+                if (CheckAttackConditions())
+                {
+                    // Still in attack range, check cooldown
+                    float timeSinceLastAttack = Time.time - lastAttackTime;
+                    if (timeSinceLastAttack >= attackCooldown)
+                    {
+                        // Attack again
+                        if (showChaseDebug) Debug.Log("Takau: Continuous attack - player still in range!");
+                        lastAttackTime = Time.time;
+                        currentAttackTime = 0;
+                        return; // Stay in attack mode
+                    }
+                    else
+                    {
+                        // Wait for cooldown, but don't move away
+                        if (showChaseDebug) Debug.Log($"Takau: Attack on cooldown ({attackCooldown - timeSinceLastAttack:F1}s remaining)");
+                        return; // Stay in attack mode but don't attack yet
+                    }
+                }
+                else
+                {
+                    // Player moved away, return to chase or wait
+                    if (isDetectTarget && currentTarget != null)
+                    {
+                        if (showChaseDebug) Debug.Log("Takau: Player moved away from attack range, switching to chase");
+                        SwitchMoveMode(MoveMode.chase);
+                    }
+                    else
+                    {
+                        if (showChaseDebug) Debug.Log("Takau: Lost target after attack, switching to wait");
+                        SwitchMoveMode(MoveMode.wait);
+                    }
+                }
+            }
+        }
         private void Charging()
         {
             if (moveMode == MoveMode.dying) return;
@@ -952,72 +1017,6 @@ namespace DS
         public float GetCorrectChargeRange()
         {
             return viewRadius + chargeForwardVisionBonus;
-        }
-
-        private void Attacking()
-        {
-            if (moveMode == MoveMode.dying) return;
-            if (currentTarget == null)
-            {
-                if (showChaseDebug) Debug.Log("Takau: No target during attack, switching to wait");
-                SwitchMoveMode(MoveMode.wait);
-                return;
-            }
-
-            // Stop movement during attack
-            agent.destination = transform.position;
-            agent.speed = 0;
-
-            currentAttackTime += Time.deltaTime;
-
-            if (showChaseDebug)
-            {
-                Debug.Log($"Takau attacking! Time: {currentAttackTime:F1}s / {attackDuration:F1}s");
-            }
-
-            // Attack finished
-            if (currentAttackTime >= attackDuration)
-            {
-                if (showChaseDebug) Debug.Log("Takau: Attack finished");
-
-                // Execute attack effect
-                OnPlayerAttacked();
-
-                // Check if player is still close for another attack or if we should chase
-                if (CheckAttackConditions())
-                {
-                    // Still in attack range, check cooldown
-                    float timeSinceLastAttack = Time.time - lastAttackTime;
-                    if (timeSinceLastAttack >= attackCooldown)
-                    {
-                        // Attack again
-                        if (showChaseDebug) Debug.Log("Takau: Continuous attack - player still in range!");
-                        lastAttackTime = Time.time;
-                        currentAttackTime = 0;
-                        return; // Stay in attack mode
-                    }
-                    else
-                    {
-                        // Wait for cooldown, but don't move away
-                        if (showChaseDebug) Debug.Log($"Takau: Attack on cooldown ({attackCooldown - timeSinceLastAttack:F1}s remaining)");
-                        return; // Stay in attack mode but don't attack yet
-                    }
-                }
-                else
-                {
-                    // Player moved away, return to chase or wait
-                    if (isDetectTarget && currentTarget != null)
-                    {
-                        if (showChaseDebug) Debug.Log("Takau: Player moved away from attack range, switching to chase");
-                        SwitchMoveMode(MoveMode.chase);
-                    }
-                    else
-                    {
-                        if (showChaseDebug) Debug.Log("Takau: Lost target after attack, switching to wait");
-                        SwitchMoveMode(MoveMode.wait);
-                    }
-                }
-            }
         }
 
         private bool CheckAttackConditions()
@@ -1677,7 +1676,7 @@ namespace DS
         /// <summary>
         /// Set KuntiAI ke mode dying dan benar-benar nonaktifkan semua perilaku AI (tidak bisa chase, charge, attack, dsb)
         /// </summary>
-        public void SetDyingMode()
+        public void Dying()
         {
             Debug.Log("Takau: Entering DYING mode - AI is now dead!");
                 

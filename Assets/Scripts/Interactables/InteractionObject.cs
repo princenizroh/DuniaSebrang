@@ -278,7 +278,7 @@ namespace DS
                                     var kuntiAI = UnityEngine.Object.FindFirstObjectByType<DS.TakauAI>();
                                     if (kuntiAI != null)
                                     {
-                                        kuntiAI.SetDyingMode();
+                                        kuntiAI.Dying();
                                     }
                                 }
                             }
