@@ -32,11 +32,20 @@ namespace DS
         [Header("Tap Input Settings")]
         public float tapBufferDecayRate = 5f; // Kecepatan smooth decrease setelah tap
 
+        [Header("Natural Fear Decay Settings")]
+        public float naturalFearDecay = 3f; // DRASTICALLY INCREASED - Kecepatan fear berkurang saat aman
+        public float safeTimeBeforeDecay = 1f; // Waktu harus aman sebelum decay mulai (REDUCED)
+        public bool useExponentialDecay = true; // Apakah menggunakan exponential decay
+        public bool useSmoothDecay = false; // Menggunakan smooth lerp decay
+
         private Collider fearCollider;
         private Transform playerTransform;
         
-        // INPUT BUFFER SYSTEM - INI YANG BARU
+        // INPUT BUFFER SYSTEM
         private float tapBuffer = 0f;
+        
+        // NATURAL DECAY SYSTEM
+        private float safeTimer = 0f;
 
         void Start()
         {
@@ -80,6 +89,53 @@ namespace DS
             if (enemyChasing)
             {
                 AdjustFear(chaseFearIncreaseRate * Time.deltaTime);
+            }
+
+            // NATURAL FEAR DECAY SYSTEM - SISTEM BARU
+            bool isSafe = !enemyInSight && !enemyChasing;
+            
+            if (isSafe)
+            {
+                safeTimer += Time.deltaTime;
+                
+                // Mulai decay setelah beberapa detik aman
+                if (safeTimer >= safeTimeBeforeDecay)
+                {
+                    if (useSmoothDecay)
+                    {
+                        // Smooth decay dengan lerp - lebih visual
+                        float currentFear = transform.localScale.y;
+                        if (currentFear > 0.01f) // LOWERED THRESHOLD
+                        {
+                            float targetFear = 0f; // Target decay ke 0
+                            float newFear = Mathf.Lerp(currentFear, targetFear, naturalFearDecay * Time.deltaTime);
+                            transform.localScale = new Vector3(newFear, newFear, newFear);
+                        }
+                    }
+                    else if (useExponentialDecay)
+                    {
+                        // Exponential decay - AGGRESSIVE DECAY
+                        float currentFear = transform.localScale.y;
+                        if (currentFear > 0.01f) // LOWERED THRESHOLD - decay sampai hampir 0
+                        {
+                            // Menggunakan kombinasi exponential + linear untuk decay yang lebih cepat
+                            float exponentialDecay = naturalFearDecay * currentFear * Time.deltaTime;
+                            float linearDecay = naturalFearDecay * 0.3f * Time.deltaTime; // Tambahan linear
+                            float totalDecay = exponentialDecay + linearDecay;
+                            AdjustFear(-totalDecay);
+                        }
+                    }
+                    else
+                    {
+                        // Linear decay - MUCH FASTER
+                        AdjustFear(-naturalFearDecay * Time.deltaTime);
+                    }
+                }
+            }
+            else
+            {
+                // Reset safe timer jika ada ancaman
+                safeTimer = 0f;
             }
 
             fearCollider.enabled = transform.localScale.x > 0.01f;
