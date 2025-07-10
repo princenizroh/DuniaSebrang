@@ -29,8 +29,14 @@ namespace DS
         [Header("Chase Fear Settings")]
         public float chaseFearIncreaseRate = 0.5f;
 
+        [Header("Tap Input Settings")]
+        public float tapBufferDecayRate = 5f; // Kecepatan smooth decrease setelah tap
+
         private Collider fearCollider;
-        private Transform playerTransform; 
+        private Transform playerTransform;
+        
+        // INPUT BUFFER SYSTEM - INI YANG BARU
+        private float tapBuffer = 0f;
 
         void Start()
         {
@@ -43,22 +49,34 @@ namespace DS
             bool enemyInSight = CheckEnemyInView();
             bool enemyChasing = CheckEnemyChasing();
 
-            if (Input.GetKey(KeyCode.RightControl) || Input.GetKey(KeyCode.LeftControl))
+            // HOLD CTRL - Increase fear (TIDAK BERUBAH)
+            if (Input.GetKey(KeyCode.RightControl))
             {
                 AdjustFear(scaleSpeed * Time.deltaTime);
             }
 
-            if (Input.GetKeyDown(KeyCode.RightControl) || Input.GetKeyDown(KeyCode.LeftControl))
+            // TAP CTRL - Decrease fear (SISTEM BARU)
+            if (Input.GetKeyDown(KeyCode.RightControl))
             {
-                AdjustFear(-tapDecreaseAmount);
+                tapBuffer += tapDecreaseAmount; // Tambah ke buffer
             }
 
+            // SMOOTH DECREASE dari buffer
+            if (tapBuffer > 0)
+            {
+                float decreaseThisFrame = tapBufferDecayRate * Time.deltaTime;
+                decreaseThisFrame = Mathf.Min(decreaseThisFrame, tapBuffer);
+                
+                AdjustFear(-decreaseThisFrame);
+                tapBuffer -= decreaseThisFrame;
+            }
+
+            // Enemy detection (TIDAK BERUBAH)
             if (enemyInSight)
             {
                 AdjustFear(fearIncreaseRate * Time.deltaTime);
             }
 
-            // Tambahan: jika ada enemy yang sedang chase, fear bertambah lebih cepat
             if (enemyChasing)
             {
                 AdjustFear(chaseFearIncreaseRate * Time.deltaTime);
@@ -84,7 +102,6 @@ namespace DS
 
                 if (angleToEnemy < viewAngle / 2f)
                 {
-                    
                     return true;
                 }
             }
@@ -93,7 +110,6 @@ namespace DS
 
         private bool CheckEnemyChasing()
         {
-            // Cek semua AI yang sedang chase dan BELUM dalam attack range
             foreach (var ai in takauAIs)
             {
                 if (ai != null && ai.moveMode == MoveMode.chase)
@@ -128,7 +144,7 @@ namespace DS
         private void OnDrawGizmos()
         {
             // Draw view distance
-            Gizmos.color = new Color(1f, 0.5f, 0f, 0.3f); // Orange transparent
+            Gizmos.color = new Color(1f, 0.5f, 0f, 0.3f);
             Gizmos.DrawWireSphere(transform.position, viewDistance);
 
             // Draw view angle
