@@ -321,38 +321,6 @@ namespace DS
             }
         }
 
-        private void OnPlayerCaught()
-        {
-            if (showChaseDebug) Debug.Log("Takau successfully caught the player!");
-            agent.isStopped = true;
-            isDetectTarget = false;
-
-            // Try to kill player using PlayerDeathHandler
-            if (currentTarget != null)
-            {
-                PlayerDeathHandler deathHandler = currentTarget.GetComponent<PlayerDeathHandler>();
-
-                if (deathHandler == null)
-                {
-                    // Try in parent or children
-                    deathHandler = currentTarget.GetComponentInParent<PlayerDeathHandler>();
-                    if (deathHandler == null)
-                        deathHandler = currentTarget.GetComponentInChildren<PlayerDeathHandler>();
-                }
-
-                if (deathHandler != null && deathHandler.CanDie())
-                {
-                    if (showChaseDebug) Debug.Log("★★★ KILLING PLAYER via PlayerDeathHandler (caught) ★★★");
-                    deathHandler.Die("Caught by Takau");
-                }
-                else
-                {
-                    if (showChaseDebug) Debug.LogWarning("Player caught but no PlayerDeathHandler found or player cannot die!");
-                }
-            }
-        }
-
-
         private void ChargeSearching()
         {
             // Gradually expand vision cone during charge search
@@ -507,6 +475,74 @@ namespace DS
                 FinishCharge();
             }
         }
+
+        public void Dying()
+        {
+            Debug.Log("Takau: Entering DYING mode - AI is now dead!");
+                
+                // Set mode dying terlebih dahulu
+                moveMode = MoveMode.dying;
+                
+                // Stop semua movement dan navigation
+                if (agent != null)
+                {
+                    agent.isStopped = true;
+                    agent.speed = 0;
+                    agent.destination = transform.position;
+                    agent.enabled = false; // Disable NavMeshAgent sepenuhnya
+                }
+                
+                // Reset semua status
+                isDetectTarget = false;
+                isAttacking = false;
+                isCharging = false;
+                isHit = false;
+                
+                // Reset timers
+                currentTimeChasing = 0;
+                currentTimeWaiting = 0;
+                currentChargeSearchTime = 0;
+                currentAttackTime = 0;
+                currentTarget = null;
+                
+                // Reset speeds
+                currentEffectiveSpeed = 0;
+
+                Debug.Log("Takau: Successfully entered DYING mode - All systems stopped!");
+
+        }
+
+        private void OnPlayerCaught()
+        {
+            if (showChaseDebug) Debug.Log("Takau successfully caught the player!");
+            agent.isStopped = true;
+            isDetectTarget = false;
+
+            // Try to kill player using PlayerDeathHandler
+            if (currentTarget != null)
+            {
+                PlayerDeathHandler deathHandler = currentTarget.GetComponent<PlayerDeathHandler>();
+
+                if (deathHandler == null)
+                {
+                    // Try in parent or children
+                    deathHandler = currentTarget.GetComponentInParent<PlayerDeathHandler>();
+                    if (deathHandler == null)
+                        deathHandler = currentTarget.GetComponentInChildren<PlayerDeathHandler>();
+                }
+
+                if (deathHandler != null && deathHandler.CanDie())
+                {
+                    if (showChaseDebug) Debug.Log("★★★ KILLING PLAYER via PlayerDeathHandler (caught) ★★★");
+                    deathHandler.Die("Caught by Takau");
+                }
+                else
+                {
+                    if (showChaseDebug) Debug.LogWarning("Player caught but no PlayerDeathHandler found or player cannot die!");
+                }
+            }
+        }
+
 
         private bool CheckChargeTarget()
         {
@@ -1673,44 +1709,7 @@ namespace DS
             GUILayout.EndArea();
         }
 #endif
-        /// <summary>
-        /// Set KuntiAI ke mode dying dan benar-benar nonaktifkan semua perilaku AI (tidak bisa chase, charge, attack, dsb)
-        /// </summary>
-        public void Dying()
-        {
-            Debug.Log("Takau: Entering DYING mode - AI is now dead!");
-                
-                // Set mode dying terlebih dahulu
-                moveMode = MoveMode.dying;
-                
-                // Stop semua movement dan navigation
-                if (agent != null)
-                {
-                    agent.isStopped = true;
-                    agent.speed = 0;
-                    agent.destination = transform.position;
-                    agent.enabled = false; // Disable NavMeshAgent sepenuhnya
-                }
-                
-                // Reset semua status
-                isDetectTarget = false;
-                isAttacking = false;
-                isCharging = false;
-                isHit = false;
-                
-                // Reset timers
-                currentTimeChasing = 0;
-                currentTimeWaiting = 0;
-                currentChargeSearchTime = 0;
-                currentAttackTime = 0;
-                currentTarget = null;
-                
-                // Reset speeds
-                currentEffectiveSpeed = 0;
 
-                Debug.Log("Takau: Successfully entered DYING mode - All systems stopped!");
-
-        }
 
     }
 }

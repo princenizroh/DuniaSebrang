@@ -345,7 +345,7 @@ namespace DS
         {
             if (takauAI != null)
             {
-                takauAI.SetDyingMode();
+                takauAI.Dying();
                 UpdateStatus("Takau dipaksa mati");
             }
             else

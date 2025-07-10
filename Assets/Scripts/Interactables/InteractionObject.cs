@@ -350,7 +350,7 @@ namespace DS
 
             for (int i = 0; i < dialogData.dialogLines.Count; i++)
             {
-                DS.DialogManager.Instance?.PlaySpecificLine(dialogData, i);
+                DS.DialogManager.Instance?.RequestDialog(dialogData, i);
                 yield return new WaitForSeconds(dialogData.dialogLines[i].duration);
             }
         }
