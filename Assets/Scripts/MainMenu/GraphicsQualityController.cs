@@ -5,36 +5,50 @@ namespace DS
 {
     public class GraphicsQualityController : MonoBehaviour
     {
+        public static GraphicsQualityController Instance { get; private set; }
+
         [Header("Tombol Grafik")]
         public Button lowButton;
         public Button mediumButton;
         public Button highButton;
 
-        private const string GraphicsQualityKey = "GraphicsQuality"; // Simpan index kualitas grafik
+        private const string GraphicsQualityKey = "GraphicsQuality";
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject); // Hapus duplikat
+                return;
+            }
+
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
 
         private void Start()
         {
-            // Tambahkan event ke tombol
-            lowButton.onClick.AddListener(() => SetQuality(1));    // Low
-            mediumButton.onClick.AddListener(() => SetQuality(2)); // Medium
-            highButton.onClick.AddListener(() => SetQuality(3));   // High
+            SetupButtonListeners();
 
-            // Cek jika ada preferensi yang tersimpan
-            if (PlayerPrefs.HasKey(GraphicsQualityKey))
-            {
-                int savedQuality = PlayerPrefs.GetInt(GraphicsQualityKey);
-                SetQuality(savedQuality);
-                Debug.Log($"Terapkan kualitas grafik tersimpan: {QualitySettings.names[savedQuality]}");
-            }
-            else
-            {
-                Debug.Log("Tidak ada preferensi grafik tersimpan, menggunakan default.");
-            }
+            // Terapkan preferensi grafik sebelumnya
+            int savedQuality = PlayerPrefs.GetInt(GraphicsQualityKey, QualitySettings.GetQualityLevel());
+            SetQuality(savedQuality);
+        }
+
+        private void SetupButtonListeners()
+        {
+            if (lowButton != null)
+                lowButton.onClick.AddListener(() => SetQuality(1));
+
+            if (mediumButton != null)
+                mediumButton.onClick.AddListener(() => SetQuality(2));
+
+            if (highButton != null)
+                highButton.onClick.AddListener(() => SetQuality(3));
         }
 
         public void SetQuality(int qualityIndex)
         {
-            // Batasi agar tidak melebihi jumlah level yang tersedia
             qualityIndex = Mathf.Clamp(qualityIndex, 0, QualitySettings.names.Length - 1);
 
             QualitySettings.SetQualityLevel(qualityIndex, true);
@@ -42,6 +56,25 @@ namespace DS
             PlayerPrefs.Save();
 
             Debug.Log($"Kualitas grafik diatur ke: {QualitySettings.names[qualityIndex]}");
+        }
+
+        /// <summary>
+        /// Dipanggil saat scene baru jika tombol UI berubah.
+        /// </summary>
+        public void RebindButtons(Button low, Button medium, Button high)
+        {
+            // Bersihkan listener lama
+            if (lowButton != null) lowButton.onClick.RemoveAllListeners();
+            if (mediumButton != null) mediumButton.onClick.RemoveAllListeners();
+            if (highButton != null) highButton.onClick.RemoveAllListeners();
+
+            // Set tombol baru
+            lowButton = low;
+            mediumButton = medium;
+            highButton = high;
+
+            // Pasang ulang listener
+            SetupButtonListeners();
         }
     }
 }

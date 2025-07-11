@@ -7,6 +7,8 @@ namespace DS
 {
     public class Brightness : MonoBehaviour
     {
+        public static Brightness Instance { get; private set; }
+
         [Header("UI Elements")]
         public Slider brightnessSlider;
 
@@ -16,16 +18,38 @@ namespace DS
         private ColorAdjustments colorAdjustments;
         private const string BrightnessPrefsKey = "Brightness";
 
+        private void Awake()
+        {
+            // Singleton & DontDestroy
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject); // mencegah duplikat saat pindah scene
+                return;
+            }
+
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+
         private void Start()
         {
-            // Ambil ColorAdjustments dari Volume
-            if (volume.profile.TryGet<ColorAdjustments>(out colorAdjustments))
+            if (volume == null)
             {
-                float savedValue = PlayerPrefs.GetFloat(BrightnessPrefsKey, 1f); // default: 0 exposure
-                brightnessSlider.value = savedValue;
-                AdjustBrightness(savedValue);
+                Debug.LogError("Volume belum di-assign.");
+                return;
+            }
 
-                brightnessSlider.onValueChanged.AddListener(AdjustBrightness);
+            // Ambil ColorAdjustments dari Volume
+            if (volume.profile.TryGet(out colorAdjustments))
+            {
+                float savedValue = PlayerPrefs.GetFloat(BrightnessPrefsKey, 1f);
+                if (brightnessSlider != null)
+                {
+                    brightnessSlider.value = savedValue;
+                    brightnessSlider.onValueChanged.AddListener(AdjustBrightness);
+                }
+
+                AdjustBrightness(savedValue);
             }
             else
             {
